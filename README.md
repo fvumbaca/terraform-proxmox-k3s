@@ -1,6 +1,6 @@
 # terraform-proxmox-k3s
 
-A module for spinning up an expandable and flexable K3s server for your HomeLab.
+A module for spinning up an expandable and flexible K3s server for your HomeLab.
 
 ## Features
 
@@ -62,6 +62,36 @@ module "k3s" {
   ]
 }
 ```
+
+### Retrieve Kubeconfig
+
+To get the kubeconfig for your new K3s first make sure to forward the module
+output in your project's output:
+
+```terraform
+output "kubeconfig" {
+  # Update module name. Here we are using 'k3s'
+  value = module.k3s.k3s_kubeconfig
+  sensitive = true
+}
+```
+
+You may need to refresh your state:
+
+```sh
+terraform refresh
+```
+
+Finally output the config file:
+
+```sh
+terraform output -raw kubeconfig > config.yaml
+# Test out the config:
+kubectl --kubeconfig config.yaml get nodes
+```
+
+> Make sure your support node is routable from the computer you are running the
+command on!
 
 ## Why use nodepools and subnets?
 
