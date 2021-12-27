@@ -11,6 +11,11 @@ variable "authorized_keys_file" {
 variable "network_gateway" {
   description = "IP address of the network gateway."
   type = string
+  validation {
+    # condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.network_gateway))
+    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$", var.network_gateway))
+    error_message = "The network_gateway value must be a valid ip."
+  }
 }
 
 variable "lan_subnet" {
@@ -19,12 +24,20 @@ Subnet used by the LAN network. Note that only the bit count number at the end
 is acutally used, and all other subnets provided are secondary subnets.
 EOF
   type = string
+  validation {
+    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.lan_subnet))
+    error_message = "The lan_subnet value must be a valid cidr range."
+  }
 }
 
 variable "control_plane_subnet" {
   description = <<EOF
 EOF
   type = string
+  validation {
+    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.control_plane_subnet))
+    error_message = "The control_plane_subnet value must be a valid cidr range."
+  }
 }
 
 variable "cluster_name" {

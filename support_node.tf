@@ -16,6 +16,10 @@ locals {
   support_node_ip = cidrhost(var.control_plane_subnet, 0)
 }
 
+locals {
+  lan_subnet_cidr_bitnum = split("/", var.lan_subnet)[1]
+}
+
 resource "proxmox_vm_qemu" "k3s-support" {
     target_node = var.proxmox_node
     name = join("-", [var.cluster_name, "support"])
@@ -51,7 +55,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
     ciuser = local.support_node_settings.user
 
-    ipconfig0 = "ip=${local.support_node_ip}/24,gw=${var.network_gateway}"
+    ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
     sshkeys = file(var.authorized_keys_file)
 

@@ -60,7 +60,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
 
   ciuser = local.master_node_settings.user
 
-  ipconfig0 = "ip=${local.master_node_ips[count.index]}/24,gw=${var.network_gateway}"
+  ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
     sshkeys = file(var.authorized_keys_file)
 
