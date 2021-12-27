@@ -1,5 +1,7 @@
 # terraform-proxmox-k3s
 
+A module for spinning up an expandable and flexable K3s server for your HomeLab.
+
 ## Features
 
 - Fully automated. No need to remote into a VM; even for a kubeconfig
@@ -7,6 +9,14 @@
 - Static(ish) MAC addresses for reproducible DHCP reservations
 - Node pools to easily scale and to handle many kinds of workloads
 - Pure Terraform - no Ansible needed.
+
+## Prerequisites
+
+- A Proxmox node with sufficient capacity for all nodes
+- A cloneable or template VM that supports Cloud-init and is based on Debian
+  (ideally ubuntu server)
+- 2 cidr ranges for master and worker nodes NOT handed out by DHCP (nodes are
+  configured with static IPs from these ranges)
 
 ## Usage
 
@@ -39,21 +49,30 @@ module "k3s" {
     memory = 4096
   }
 
-  # 192.168.0.200 -> 192.168.0.207 (6 nodes)
+  # 192.168.0.200 -> 192.168.0.207 (6 available IPs for nodes)
   control_plane_subnet = "192.168.0.200/29"
 
   node_pools = [
     {
       name = "default"
       size = 2
-      # 192.168.0.208 -> 192.168.0.223 (14 nodes)
-      subnet = "192.168.0.208/28" # 14 ips
+      # 192.168.0.208 -> 192.168.0.223 (14 available IPs for nodes)
+      subnet = "192.168.0.208/28"
     }
   ]
 }
 ```
 
+## Why use nodepools and subnets?
+
+This module is designed with nodepools and subnets to allow for changes to the
+cluster composition in the future. If later on, you want to add another master
+or worker node, you can do so without needing to teardown/modify existing
+nodes. Nodepools are key if you plan to support nodes with different nodepool
+capabilities in the future without impacting other nodes.
+
 ## Todo
 
+- [ ] Add variable to allow workloads on master nodes
 - [ ] Setup external nginx load balancer to stream to traefik
-- [ ] Handle LAN subnet settings better
+- [X] Handle LAN subnet settings better
