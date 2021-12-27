@@ -119,6 +119,10 @@ resource "null_resource" "k3s_nginx_config" {
       k3s_server_hosts = [ for ip in local.master_node_ips:
         "${ip}:6443"
       ]
+      k3s_nodes = concat(local.master_node_ips, [
+        for node in local.listed_worker_nodes:
+        node.ip
+      ])
     })
   }
 

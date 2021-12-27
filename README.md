@@ -5,7 +5,7 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
 ## Features
 
 - Fully automated. No need to remote into a VM; even for a kubeconfig
-- Built in and automatically configured external (to the cluster) loadbalancer
+- Built in and automatically configured external loadbalancer (both K3s API and ingress)
 - Static(ish) MAC addresses for reproducible DHCP reservations
 - Node pools to easily scale and to handle many kinds of workloads
 - Pure Terraform - no Ansible needed.
