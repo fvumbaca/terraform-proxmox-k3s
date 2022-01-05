@@ -12,6 +12,8 @@ locals {
         cores = 2
         sockets = 1
         memory = 4096
+        storage_type = "scsi"
+        storage_id = "local-lvm"
         disk_size = "20G"
         user = "k3s"
         template = var.node_template
@@ -49,8 +51,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   memory = each.value.memory
 
   disk {
-    type = "scsi"
-    storage = "local-lvm"
+    type = each.value.storage_type
+    storage = each.value.storage_id
     size = each.value.disk_size
   }
 

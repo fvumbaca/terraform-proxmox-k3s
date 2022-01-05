@@ -7,6 +7,8 @@ locals {
     cores = 2
     sockets = 1
     memory = 4096
+    storage_type = "scsi"
+    storage_id = "local-lvm"
     disk_size = "20G"
     user = "k3s"
   })
@@ -39,8 +41,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
   memory = local.master_node_settings.memory
 
   disk {
-    type = "scsi"
-    storage = "local-lvm"
+    type = local.master_node_settings.storage_type
+    storage = local.master_node_settings.storage_id
     size = local.master_node_settings.disk_size
   }
 

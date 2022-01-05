@@ -65,9 +65,10 @@ variable "support_node_settings" {
     cores = optional(number),
     sockets = optional(number),
     memory = optional(number),
+    storage_type = optional(string),
+    storage_id = optional(string),
     disk_size = optional(string),
     user = optional(string),
-
     db_name = optional(string),
     db_user = optional(string),
   })
@@ -84,6 +85,8 @@ variable "master_node_settings" {
     cores = optional(number),
     sockets = optional(number),
     memory = optional(number),
+    storage_type = optional(string),
+    storage_id = optional(string),
     disk_size = optional(string),
     user = optional(string),
   })
@@ -103,6 +106,8 @@ variable "node_pools" {
     cores = optional(number),
     sockets = optional(number),
     memory = optional(number),
+    storage_type = optional(string),
+    storage_id = optional(string),
     disk_size = optional(string),
     user = optional(string),
 

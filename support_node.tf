@@ -6,6 +6,10 @@ locals {
     cores = 2
     sockets = 1
     memory = 4096
+
+
+    storage_type = "scsi"
+    storage_id = "local-lvm"
     disk_size = "10G"
     user = "support"
 
@@ -34,8 +38,8 @@ resource "proxmox_vm_qemu" "k3s-support" {
     memory = local.support_node_settings.memory
 
     disk {
-      type = "scsi"
-      storage = "local-lvm"
+      type = local.support_node_settings.storage_type
+      storage = local.support_node_settings.storage_id
       size = local.support_node_settings.disk_size
     }
 
