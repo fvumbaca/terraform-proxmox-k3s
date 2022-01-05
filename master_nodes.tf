@@ -78,6 +78,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
           alt_names = concat([local.support_node_ip], var.api_hostnames)
           server_hosts = []
           node_taints = ["CriticalAddonsOnly=true:NoExecute"]
+          disable = var.k3s_disable_components
           datastores = [{
             host = "${local.support_node_ip}:3306"
             name = "k3s"
@@ -90,6 +91,11 @@ resource "proxmox_vm_qemu" "k3s-master" {
   }
 
   data "external" "kubeconfig" {
+    depends_on = [
+      proxmox_vm_qemu.k3s-support,
+      proxmox_vm_qemu.k3s-master
+    ]
+
     program = [
       "/usr/bin/ssh",
       "-o UserKnownHostsFile=/dev/null",

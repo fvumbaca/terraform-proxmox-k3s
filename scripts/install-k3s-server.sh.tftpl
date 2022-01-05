@@ -1,4 +1,7 @@
 curl -sfL https://get.k3s.io | sh -s - ${mode} \
+%{ for component in disable ~}
+--disable ${component} \
+%{ endfor ~}
 %{ for host in server_hosts ~}
 --server "${host}" \
 %{ endfor ~}
