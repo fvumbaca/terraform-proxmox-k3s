@@ -26,7 +26,7 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
 ```terraform
 module "k3s" {
   source  = "fvumbaca/k3s/proxmox"
-  version = "0.0.0"
+  version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
 
   authorized_keys_file = "authorized_keys"
 
@@ -80,12 +80,6 @@ output "kubeconfig" {
   value = module.k3s.k3s_kubeconfig
   sensitive = true
 }
-```
-
-You may need to refresh your state:
-
-```sh
-terraform refresh
 ```
 
 Finally output the config file:
