@@ -1,6 +1,6 @@
 
 output "k3s_db_password" {
-  value = random_password.k3s-master-db-password.result
+  value     = random_password.k3s-master-db-password.result
   sensitive = true
 }
 
@@ -17,7 +17,7 @@ output "k3s_db_host" {
 }
 
 output "root_db_password" {
-  value = random_password.support-db-password.result
+  value     = random_password.support-db-password.result
   sensitive = true
 }
 
@@ -34,7 +34,7 @@ output "master_node_ips" {
 }
 
 output "k3s_server_token" {
-  value = random_password.k3s-server-token.result
+  value     = random_password.k3s-server-token.result
   sensitive = true
 }
 
@@ -43,7 +43,7 @@ output "k3s_master_node_ips" {
 }
 
 output "k3s_kubeconfig" {
-  value = replace(base64decode(replace(data.external.kubeconfig.result.kubeconfig, " ", "")), "server: https://127.0.0.1:6443", "server: https://${local.support_node_ip}:6443")
+  value     = replace(base64decode(replace(data.external.kubeconfig.result.kubeconfig, " ", "")), "server: https://127.0.0.1:6443", "server: https://${local.support_node_ip}:6443")
   sensitive = true
 }
 
