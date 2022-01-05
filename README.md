@@ -43,6 +43,12 @@ module "k3s" {
     memory = 4096
   }
 
+  # Disable default traefik and servicelb installs for metallb and traefik 2
+  k3s_disable_components = [
+    "traefik",
+    "servicelb"
+  ]
+
   master_nodes_count = 2
   master_node_settings = {
     cores = 2
@@ -104,5 +110,3 @@ capabilities in the future without impacting other nodes.
 ## Todo
 
 - [ ] Add variable to allow workloads on master nodes
-- [ ] Setup external nginx load balancer to stream to traefik
-- [X] Handle LAN subnet settings better
