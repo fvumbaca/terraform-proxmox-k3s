@@ -93,6 +93,10 @@ kubectl --kubeconfig config.yaml get nodes
 > Make sure your support node is routable from the computer you are running the
 command on!
 
+## Runbooks
+
+- [How to roll (update) your nodes](docs/roll-node-pools.md)
+
 ## Why use nodepools and subnets?
 
 This module is designed with nodepools and subnets to allow for changes to the
