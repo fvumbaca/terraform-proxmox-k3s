@@ -9,14 +9,15 @@ locals {
     [
       for i in range(pool.size) :
       merge(defaults(pool, {
-        cores        = 2
-        sockets      = 1
-        memory       = 4096
-        storage_type = "scsi"
-        storage_id   = "local-lvm"
-        disk_size    = "20G"
-        user         = "k3s"
-        template     = var.node_template
+        cores          = 2
+        sockets        = 1
+        memory         = 4096
+        storage_type   = "scsi"
+        storage_id     = "local-lvm"
+        disk_size      = "20G"
+        user           = "k3s"
+        template       = var.node_template
+        network_bridge = "vmbr0"
         }), {
         i  = i
         ip = cidrhost(pool.subnet, i)
@@ -57,7 +58,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   }
 
   network {
-    bridge    = "vmbr0"
+    bridge    = each.value.network_bridge
     firewall  = true
     link_down = false
     macaddr   = upper(macaddress.k3s-workers[each.key].address)
@@ -96,4 +97,3 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   }
 
 }
-

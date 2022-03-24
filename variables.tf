@@ -113,6 +113,8 @@ variable "node_pools" {
     user         = optional(string),
 
     template = optional(string),
+
+    network_bridge = optional(string),
   }))
 }
 variable "api_hostnames" {
