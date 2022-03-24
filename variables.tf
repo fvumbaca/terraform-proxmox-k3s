@@ -62,15 +62,16 @@ variable "proxmox_resource_pool" {
 
 variable "support_node_settings" {
   type = object({
-    cores        = optional(number),
-    sockets      = optional(number),
-    memory       = optional(number),
-    storage_type = optional(string),
-    storage_id   = optional(string),
-    disk_size    = optional(string),
-    user         = optional(string),
-    db_name      = optional(string),
-    db_user      = optional(string),
+    cores          = optional(number),
+    sockets        = optional(number),
+    memory         = optional(number),
+    storage_type   = optional(string),
+    storage_id     = optional(string),
+    disk_size      = optional(string),
+    user           = optional(string),
+    db_name        = optional(string),
+    db_user        = optional(string),
+    network_bridge = optional(string),
   })
 }
 
@@ -82,13 +83,14 @@ variable "master_nodes_count" {
 
 variable "master_node_settings" {
   type = object({
-    cores        = optional(number),
-    sockets      = optional(number),
-    memory       = optional(number),
-    storage_type = optional(string),
-    storage_id   = optional(string),
-    disk_size    = optional(string),
-    user         = optional(string),
+    cores          = optional(number),
+    sockets        = optional(number),
+    memory         = optional(number),
+    storage_type   = optional(string),
+    storage_id     = optional(string),
+    disk_size      = optional(string),
+    user           = optional(string),
+    network_bridge = optional(string),
   })
 }
 

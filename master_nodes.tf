@@ -47,7 +47,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   }
 
   network {
-    bridge    = "vmbr0"
+    bridge    = local.master_node_settings.network_bridge
     firewall  = true
     link_down = false
     macaddr   = upper(macaddress.k3s-masters[count.index].address)
