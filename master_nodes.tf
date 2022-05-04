@@ -4,13 +4,14 @@ resource "macaddress" "k3s-masters" {
 
 locals {
   master_node_settings = defaults(var.master_node_settings, {
-    cores        = 2
-    sockets      = 1
-    memory       = 4096
-    storage_type = "scsi"
-    storage_id   = "local-lvm"
-    disk_size    = "20G"
-    user         = "k3s"
+    cores          = 2
+    sockets        = 1
+    memory         = 4096
+    storage_type   = "scsi"
+    storage_id     = "local-lvm"
+    disk_size      = "20G"
+    user           = "k3s"
+    network_bridge = "vmbr0"
   })
 
   master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
@@ -47,7 +48,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   }
 
   network {
-    bridge    = "vmbr0"
+    bridge    = local.master_node_settings.network_bridge
     firewall  = true
     link_down = false
     macaddr   = upper(macaddress.k3s-masters[count.index].address)

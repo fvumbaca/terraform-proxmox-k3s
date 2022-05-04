@@ -15,6 +15,8 @@ locals {
 
     db_name = "k3s"
     db_user = "k3s"
+
+    network_bridge = "vmbr0"
   })
 
   support_node_ip = cidrhost(var.control_plane_subnet, 0)
@@ -44,7 +46,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
   }
 
   network {
-    bridge    = "vmbr0"
+    bridge    = local.support_node_settings.network_bridge
     firewall  = true
     link_down = false
     macaddr   = upper(macaddress.k3s-support.address)
