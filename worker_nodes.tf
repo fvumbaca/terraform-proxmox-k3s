@@ -16,6 +16,7 @@ locals {
         storage_id   = "local-lvm"
         disk_size    = "20G"
         user         = "k3s"
+        network_tag  = -1
         template     = var.node_template
         }), {
         i  = i
@@ -64,7 +65,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
     model     = "virtio"
     queues    = 0
     rate      = 0
-    tag       = -1
+    tag       = each.value.network_tag
   }
 
   os_type = "cloud-init"

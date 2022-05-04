@@ -11,6 +11,7 @@ locals {
     storage_id   = "local-lvm"
     disk_size    = "20G"
     user         = "k3s"
+    network_tag  = -1
   })
 
   master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
@@ -54,7 +55,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
     model     = "virtio"
     queues    = 0
     rate      = 0
-    tag       = -1
+    tag       = local.master_node_settings.network_tag
   }
 
 

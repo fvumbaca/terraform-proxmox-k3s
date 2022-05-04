@@ -12,6 +12,7 @@ locals {
     storage_id   = "local-lvm"
     disk_size    = "10G"
     user         = "support"
+    network_tag  = -1
 
     db_name = "k3s"
     db_user = "k3s"
@@ -51,7 +52,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
     model     = "virtio"
     queues    = 0
     rate      = 0
-    tag       = -1
+    tag       = local.support_node_settings.network_tag
   }
 
 
