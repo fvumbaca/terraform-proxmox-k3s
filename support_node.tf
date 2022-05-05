@@ -14,8 +14,12 @@ locals {
     user         = "support"
     network_tag  = -1
 
+
+
     db_name = "k3s"
     db_user = "k3s"
+
+    
 
     network_bridge = "vmbr0"
   })
@@ -40,6 +44,8 @@ resource "proxmox_vm_qemu" "k3s-support" {
   sockets = local.support_node_settings.sockets
   memory  = local.support_node_settings.memory
 
+
+  agent = 1
   disk {
     type    = local.support_node_settings.storage_type
     storage = local.support_node_settings.storage_id

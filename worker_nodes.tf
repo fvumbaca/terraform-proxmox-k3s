@@ -52,6 +52,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   sockets = each.value.sockets
   memory  = each.value.memory
 
+  agent = 1
+
   disk {
     type    = each.value.storage_type
     storage = each.value.storage_id
