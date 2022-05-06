@@ -5,6 +5,11 @@ MARIADB_K3S_DATABASE="${k3s_database}"
 MARIADB_K3S_USER="${k3s_user}"
 MARIADB_K3S_PASSWORD="${k3s_password}"
 
+HTTP_PROXY="${http_proxy}"
+HTTPS_PROXY="${http_proxy}"
+http_proxy="${http_proxy}"
+https_proxy="${http_proxy}"
+
 mariadb() {
     sudo apt install mariadb-server -y
 

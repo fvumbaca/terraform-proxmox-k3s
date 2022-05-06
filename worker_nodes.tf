@@ -88,6 +88,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   sshkeys = file(var.authorized_keys_file)
 
+  nameserver = var.nameserver
+
   connection {
     type = "ssh"
     user = each.value.user
@@ -104,6 +106,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
         datastores   = []
+
+        http_proxy  = var.http_proxy
       })
     ]
   }

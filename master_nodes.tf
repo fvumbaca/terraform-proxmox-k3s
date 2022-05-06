@@ -78,6 +78,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
 
   sshkeys = file(var.authorized_keys_file)
 
+  nameserver = var.nameserver
+
   connection {
     type = "ssh"
     user = local.master_node_settings.user
@@ -99,6 +101,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
           user     = "k3s"
           password = random_password.k3s-master-db-password.result
         }]
+
+        http_proxy  = var.http_proxy
       })
     ]
   }
