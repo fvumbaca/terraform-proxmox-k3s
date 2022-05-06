@@ -71,6 +71,15 @@ resource "proxmox_vm_qemu" "k3s-worker" {
     tag       = each.value.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
+
   os_type = "cloud-init"
 
   ciuser = each.value.user

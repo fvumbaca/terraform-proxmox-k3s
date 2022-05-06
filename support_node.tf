@@ -63,6 +63,14 @@ resource "proxmox_vm_qemu" "k3s-support" {
     tag       = local.support_node_settings.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
 
   os_type = "cloud-init"
 
