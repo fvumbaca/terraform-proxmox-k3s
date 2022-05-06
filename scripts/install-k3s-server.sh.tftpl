@@ -1,7 +1,7 @@
-HTTP_PROXY="${http_proxy}"
-HTTPS_PROXY="${http_proxy}"
-http_proxy="${http_proxy}"
-https_proxy="${http_proxy}"
+export HTTP_PROXY="${http_proxy}"
+export HTTPS_PROXY="${http_proxy}"
+export http_proxy="${http_proxy}"
+export https_proxy="${http_proxy}"
 
 curl -sfL https://get.k3s.io | sh -s - ${mode} \
 %{ for component in disable ~}
