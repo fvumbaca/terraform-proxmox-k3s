@@ -91,6 +91,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         tokens       = [random_password.k3s-server-token.result]
         alt_names    = []
         disable      = []
+        extra_args   = var.k3s_extra_worker_args
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
         datastores   = []
