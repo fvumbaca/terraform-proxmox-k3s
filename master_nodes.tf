@@ -32,6 +32,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   count       = var.master_nodes_count
   target_node = var.proxmox_node
   name        = "${var.cluster_name}-master-${count.index}"
+  vmid        = "${var.start_vmid}" + 5 + tonumber("${count.index}")
 
   clone = var.node_template
 
@@ -83,6 +84,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
         server_hosts = []
         node_taints  = ["CriticalAddonsOnly=true:NoExecute"]
         disable      = var.k3s_disable_components
+        extra_args   = var.k3s_extra_server_args
         datastores = [{
           host     = "${local.support_node_ip}:3306"
           name     = "k3s"
