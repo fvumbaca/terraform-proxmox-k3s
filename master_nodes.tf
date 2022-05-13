@@ -84,6 +84,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
         server_hosts = []
         node_taints  = ["CriticalAddonsOnly=true:NoExecute"]
         disable      = var.k3s_disable_components
+        extra_args   = var.k3s_extra_server_args
         datastores = [{
           host     = "${local.support_node_ip}:3306"
           name     = "k3s"
