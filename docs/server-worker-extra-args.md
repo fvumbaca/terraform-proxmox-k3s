@@ -26,7 +26,7 @@ These additonal args are added to the server -> [Server args ref](https://ranche
 // ...
 ```
 
-These additonal args are added to the worker -> [Server args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
+These additonal args are added to the worker -> [Worker args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
 
 ```
 // ....
