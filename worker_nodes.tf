@@ -17,6 +17,7 @@ locals {
         disk_size      = "20G"
         user           = "k3s"
         template       = var.node_template
+        target_node    = pool.target_node == "" ? pool.target_node: var.proxmox_node
         network_bridge = "vmbr0"
         network_tag    = -1
         }), {
@@ -40,7 +41,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   for_each = local.mapped_worker_nodes
 
-  target_node = var.proxmox_node
+  target_node = each.value.target_node
   name        = "${var.cluster_name}-${each.key}"
 
   clone = each.value.template
@@ -62,11 +63,19 @@ resource "proxmox_vm_qemu" "k3s-worker" {
     bridge    = each.value.network_bridge
     firewall  = true
     link_down = false
-    macaddr   = upper(macaddress.k3s-workers[each.key].address)
     model     = "virtio"
     queues    = 0
     rate      = 0
     tag       = each.value.network_tag
+  }
+
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
   }
 
   os_type = "cloud-init"
@@ -81,6 +90,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
     type = "ssh"
     user = each.value.user
     host = each.value.ip
+    private_key = file(var.authorized_private_key_file)
+    agent = false
   }
 
   provisioner "remote-exec" {
@@ -93,8 +104,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
         datastores   = []
+        http_proxy  = var.http_proxy
       })
     ]
   }
-
 }

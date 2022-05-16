@@ -1,4 +1,3 @@
-
 resource "macaddress" "k3s-support" {}
 
 locals {
@@ -28,7 +27,7 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "k3s-support" {
-  target_node = var.proxmox_node
+  target_node = length(var.proxmox_support_node) == 0 ? var.proxmox_node: var.proxmox_support_node
   name        = join("-", [var.cluster_name, "support"])
 
   clone = var.node_template
@@ -48,15 +47,21 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
   network {
     bridge    = local.support_node_settings.network_bridge
-    firewall  = true
     link_down = false
-    macaddr   = upper(macaddress.k3s-support.address)
     model     = "virtio"
     queues    = 0
     rate      = 0
     tag       = local.support_node_settings.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
 
   os_type = "cloud-init"
 
@@ -70,23 +75,25 @@ resource "proxmox_vm_qemu" "k3s-support" {
     type = "ssh"
     user = local.support_node_settings.user
     host = local.support_node_ip
+    private_key = file(var.authorized_private_key_file)
+    agent = false
   }
 
   provisioner "file" {
     destination = "/tmp/install.sh"
     content = templatefile("${path.module}/scripts/install-support-apps.sh.tftpl", {
       root_password = random_password.support-db-password.result
-
       k3s_database = local.support_node_settings.db_name
       k3s_user     = local.support_node_settings.db_user
       k3s_password = random_password.k3s-master-db-password.result
+      http_proxy  = var.http_proxy
     })
   }
 
   provisioner "remote-exec" {
     inline = [
       "chmod u+x /tmp/install.sh",
-      "/tmp/install.sh",
+      "sh /tmp/install.sh",
       "rm -r /tmp/install.sh",
     ]
   }
@@ -118,6 +125,7 @@ resource "null_resource" "k3s_nginx_config" {
     type = "ssh"
     user = local.support_node_settings.user
     host = local.support_node_ip
+    private_key = file(var.authorized_private_key_file)
   }
 
   provisioner "file" {

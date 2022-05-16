@@ -1,7 +1,6 @@
 resource "macaddress" "k3s-masters" {
   count = var.master_nodes_count
 }
-
 locals {
   master_node_settings = defaults(var.master_node_settings, {
     cores          = 2
@@ -30,7 +29,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   ]
 
   count       = var.master_nodes_count
-  target_node = var.proxmox_node
+  target_node = length(var.master_node_target_nodes) == 0 ? var.proxmox_node :var.master_node_target_nodes[count.index]
   name        = "${var.cluster_name}-master-${count.index}"
 
   clone = var.node_template
@@ -59,6 +58,14 @@ resource "proxmox_vm_qemu" "k3s-master" {
     tag       = local.master_node_settings.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
 
   os_type = "cloud-init"
 
@@ -72,6 +79,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
     type = "ssh"
     user = local.master_node_settings.user
     host = local.master_node_ips[count.index]
+    private_key = file(var.authorized_private_key_file)
+    agent = false
   }
 
   provisioner "remote-exec" {
@@ -89,6 +98,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
           user     = "k3s"
           password = random_password.k3s-master-db-password.result
         }]
+        http_proxy  = var.http_proxy
       })
     ]
   }

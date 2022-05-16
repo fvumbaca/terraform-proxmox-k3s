@@ -1,11 +1,22 @@
 variable "proxmox_node" {
   description = "Proxmox node to create VMs on."
   type        = string
+  default     = ""
 }
-
+variable "proxmox_support_node" {
+  description = "Proxmox node to create VMs on."
+  type        = string
+  default     = ""
+}
 variable "authorized_keys_file" {
   description = "Path to file containing public SSH keys for remoting into nodes."
   type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+variable "authorized_private_key_file" {
+  description = "Path to file containing private SSH keys for remoting into nodes."
+  type        = string
+  default     = "~/.ssh/id_rsa"
 }
 
 variable "network_gateway" {
@@ -81,6 +92,11 @@ variable "master_nodes_count" {
   default     = 2
   type        = number
 }
+variable "master_node_target_nodes" {
+  description = "Names of master nodes, distributes the master in order of this list. Must be one to one mapping."
+  default     = []
+  type        = list(string)
+}
 
 variable "master_node_settings" {
   type = object({
@@ -95,6 +111,7 @@ variable "master_node_settings" {
     network_tag    = optional(number),
   })
 }
+
 
 variable "node_pools" {
   description = "Node pool definitions for the cluster."
@@ -114,8 +131,8 @@ variable "node_pools" {
     disk_size    = optional(string),
     user         = optional(string),
     network_tag  = optional(number),
-
-    template = optional(string),
+    target_node  = optional(string),
+    template     = optional(string),
 
     network_bridge = optional(string),
   }))
@@ -130,4 +147,10 @@ variable "k3s_disable_components" {
   description = "List of components to disable. Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/#kubernetes-components"
   type        = list(string)
   default     = []
+}
+
+variable "http_proxy" {
+  default     = ""
+  type        = string
+  description = "http_proxy"
 }

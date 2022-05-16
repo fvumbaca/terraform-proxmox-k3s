@@ -5,31 +5,42 @@ MARIADB_K3S_DATABASE="${k3s_database}"
 MARIADB_K3S_USER="${k3s_user}"
 MARIADB_K3S_PASSWORD="${k3s_password}"
 
+export HTTP_PROXY="${http_proxy}"
+export HTTPS_PROXY="${http_proxy}"
+export http_proxy="${http_proxy}"
+export https_proxy="${http_proxy}"
+
 mariadb() {
-    sudo apt install mariadb-server -y
-
+    echo "\e[1;33;4;44mProvisioning delay to ensure VM is online.!\e[0m" || exit 1 
+    sleep 10 &&
+    sudo -E apt install mariadb-server -y &&
     # Make mariadb listen to all remote requests
-    sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\10.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
-
+    sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\10.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf &&
+    echo "\e[1;33;4;44mDatabase now listening on all ports.\e[0m" &&
     # Replicate mysql_secure_installation script
-    sudo mariadb -e "UPDATE mysql.user SET Password=PASSWORD('$MARIADB_ROOT_PASSWORD') WHERE User='root'"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User=''"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
-    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'"
-
+    sudo mariadb -e "UPDATE mysql.user SET Password=PASSWORD('$MARIADB_ROOT_PASSWORD') WHERE User='root'" &&
+    sudo mariadb -e "DELETE FROM mysql.user WHERE User=''" 
+    sudo mariadb -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')" &&
+    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'" &&
+    echo "\e[1;33;4;44mDatabase configured.\\e[0m" &&
     # Setup db and user for k3s
-    sudo mariadb -e "CREATE DATABASE IF NOT EXISTS $MARIADB_K3S_DATABASE"
-    sudo mariadb -e "CREATE USER IF NOT EXISTS $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'"
-    sudo mariadb -e "GRANT ALL ON $MARIADB_K3S_DATABASE.* to $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'"
-
+    sudo mariadb -e "CREATE DATABASE IF NOT EXISTS $MARIADB_K3S_DATABASE"  &&
+    sudo mariadb -e "CREATE USER IF NOT EXISTS $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'" &&
+    sudo mariadb -e "GRANT ALL ON $MARIADB_K3S_DATABASE.* to $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'" &&
+    echo "\e[1;33;4;44mDatabase configured for k3s.\\e[0m" &&
     # Flush and restart db
-    sudo mysql -e "FLUSH PRIVILEGES"
-    sudo systemctl restart mariadb
+    sudo mariadb -e "FLUSH PRIVILEGES" &&
+    sudo systemctl restart mariadb &&
+    echo "\e[1;33;4;44mFlushing Privelleges.\e[0m"
 }
 
 nginx() {
-    sudo apt install nginx -y
+    echo "\e[1;33;4;44mProvisioning delay to ensure VM is online.\e[0m" &&
+    sleep 10 &&
+    sudo -E apt install nginx -y &&
+    echo "\e[1;33;4;44mNGINX installed.\e[0m"
 }
+
 
 mariadb
 nginx
