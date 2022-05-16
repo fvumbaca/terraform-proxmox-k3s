@@ -43,6 +43,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
   sockets = local.master_node_settings.sockets
   memory  = local.master_node_settings.memory
 
+  agent = 1
+
   disk {
     type    = local.master_node_settings.storage_type
     storage = local.master_node_settings.storage_id
@@ -60,6 +62,14 @@ resource "proxmox_vm_qemu" "k3s-master" {
     tag       = local.master_node_settings.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
 
   os_type = "cloud-init"
 
@@ -68,6 +78,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
   ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
   sshkeys = file(var.authorized_keys_file)
+
+  nameserver = var.nameserver
 
   connection {
     type = "ssh"
@@ -90,6 +102,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
           user     = "k3s"
           password = random_password.k3s-master-db-password.result
         }]
+
+        http_proxy  = var.http_proxy
       })
     ]
   }
