@@ -5,7 +5,7 @@
 
 ```additional args
 // ....
-  // This is the old node pool:
+  // These additonal args are added to the server:
   k3s_extra_server_args = [
     "--write-kubeconfig-mode 644",
     "--kube-apiserver-arg default-not-ready-toleration-seconds=30",
@@ -19,7 +19,7 @@
     #"--oidc-username-claim"
   ]
 
-  // This is the old node pool:
+  // These additonal args are added to the worker:
   k3s_extra_worker_args = [
     "--kubelet-arg node-status-update-frequency=5s"
   ]
