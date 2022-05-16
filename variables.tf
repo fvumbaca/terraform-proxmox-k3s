@@ -144,3 +144,103 @@ variable "nameserver" {
   type        = string
   description = "nameserver"
 }
+}
+
+variable "node_template" {
+  type        = string
+  description = <<EOF
+Proxmox vm to use as a base template for all nodes. Can be a template or
+another vm that supports cloud-init.
+EOF
+}
+
+variable "proxmox_resource_pool" {
+  description = "Resource pool name to use in proxmox to better organize nodes."
+  type        = string
+  default     = ""
+}
+
+variable "support_node_settings" {
+  type = object({
+    cores          = optional(number),
+    sockets        = optional(number),
+    memory         = optional(number),
+    storage_type   = optional(string),
+    storage_id     = optional(string),
+    disk_size      = optional(string),
+    user           = optional(string),
+    db_name        = optional(string),
+    db_user        = optional(string),
+    network_bridge = optional(string),
+    network_tag    = optional(number), 
+  })
+}
+
+variable "master_nodes_count" {
+  description = "Number of master nodes."
+  default     = 2
+  type        = number
+}
+
+variable "master_node_settings" {
+  type = object({
+    cores          = optional(number),
+    sockets        = optional(number),
+    memory         = optional(number),
+    storage_type   = optional(string),
+    storage_id     = optional(string),
+    disk_size      = optional(string),
+    user           = optional(string),
+    network_bridge = optional(string),
+    network_tag    = optional(number),
+  })
+}
+
+variable "node_pools" {
+  description = "Node pool definitions for the cluster."
+  type = list(object({
+
+    name   = string,
+    size   = number,
+    subnet = string,
+
+    taints = optional(list(string)),
+
+    cores        = optional(number),
+    sockets      = optional(number),
+    memory       = optional(number),
+    storage_type = optional(string),
+    storage_id   = optional(string),
+    disk_size    = optional(string),
+    user         = optional(string),
+    network_tag  = optional(number),
+
+    template = optional(string),
+
+    network_bridge = optional(string),
+  }))
+}
+variable "api_hostnames" {
+  description = "Alternative hostnames for the API server."
+  type        = list(string)
+  default     = []
+}
+
+variable "k3s_disable_components" {
+  description = "List of components to disable. Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/#kubernetes-components"
+  type        = list(string)
+  default     = []
+}
+
+
+variable "http_proxy" {
+  default     = ""
+  type        = string
+  description = "http_proxy"
+}
+
+variable "nameserver" {
+  default     = ""
+  type        = string
+  description = "nameserver"
+}
