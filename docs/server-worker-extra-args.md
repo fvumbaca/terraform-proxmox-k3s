@@ -1,5 +1,11 @@
-Add the following to you main.tf and modify the extra arguements to your liking;   
-  
+
+#  Add the following to you main.tf and modify the extra arguements to your liking;   
+
+## args are added to the k3s server and worker nodes
+
+```additional args
+// ....
+  // This is the old node pool:
   k3s_extra_server_args = [
     "--write-kubeconfig-mode 644",
     "--kube-apiserver-arg default-not-ready-toleration-seconds=30",
@@ -13,6 +19,9 @@ Add the following to you main.tf and modify the extra arguements to your liking;
     #"--oidc-username-claim"
   ]
 
+  // This is the old node pool:
   k3s_extra_worker_args = [
     "--kubelet-arg node-status-update-frequency=5s"
   ]
+// ...
+```
