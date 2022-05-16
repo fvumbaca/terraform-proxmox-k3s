@@ -1,7 +1,7 @@
 
-#  Add the following to you main.tf and modify the extra arguements to your liking;   
+###  Add the following to you main.tf and modify the extra arguements to your liking;   
 
-#   Example arguements are commented out, these can either be removed, if they are not required, or uncommneted if they are useful to you 
+###   Example arguements are commented out, these can either be removed, if they are not required, or uncommneted if they are useful to you 
 
 ```args are added to the k3s server and worker nodes
 // ....
