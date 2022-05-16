@@ -131,3 +131,16 @@ variable "k3s_disable_components" {
   type        = list(string)
   default     = []
 }
+
+
+variable "http_proxy" {
+  default     = ""
+  type        = string
+  description = "http_proxy"
+}
+
+variable "nameserver" {
+  default     = ""
+  type        = string
+  description = "nameserver"
+}

@@ -5,8 +5,13 @@ MARIADB_K3S_DATABASE="${k3s_database}"
 MARIADB_K3S_USER="${k3s_user}"
 MARIADB_K3S_PASSWORD="${k3s_password}"
 
+export HTTP_PROXY="${http_proxy}"
+export HTTPS_PROXY="${http_proxy}"
+export http_proxy="${http_proxy}"
+export https_proxy="${http_proxy}"
+
 mariadb() {
-    sudo apt install mariadb-server -y
+    sudo -E apt install mariadb-server -y
 
     # Make mariadb listen to all remote requests
     sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\10.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
@@ -28,7 +33,7 @@ mariadb() {
 }
 
 nginx() {
-    sudo apt install nginx -y
+    sudo -E apt install nginx -y
 }
 
 mariadb

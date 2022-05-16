@@ -52,6 +52,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   sockets = each.value.sockets
   memory  = each.value.memory
 
+  agent = 1
+
   disk {
     type    = each.value.storage_type
     storage = each.value.storage_id
@@ -69,6 +71,15 @@ resource "proxmox_vm_qemu" "k3s-worker" {
     tag       = each.value.network_tag
   }
 
+  lifecycle {
+    ignore_changes = [
+      ciuser,
+      sshkeys,
+      disk,
+      network
+    ]
+  }
+
   os_type = "cloud-init"
 
   ciuser = each.value.user
@@ -76,6 +87,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   ipconfig0 = "ip=${each.value.ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
   sshkeys = file(var.authorized_keys_file)
+
+  nameserver = var.nameserver
 
   connection {
     type = "ssh"
@@ -93,6 +106,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
         datastores   = []
+
+        http_proxy  = var.http_proxy
       })
     ]
   }
