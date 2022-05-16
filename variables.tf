@@ -131,15 +131,3 @@ variable "k3s_disable_components" {
   type        = list(string)
   default     = []
 }
-  
-variable "k3s_extra_server_args" {
-  description = "List of additional server arguements. Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/"
-  type        = list(string)
-  default     = []
-}
-
-variable "k3s_extra_worker_args" {
-  description = "List of additional worker arguements. Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/"
-  type        = list(string)
-  default     = []
-}
