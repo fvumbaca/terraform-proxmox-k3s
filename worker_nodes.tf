@@ -42,6 +42,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   target_node = var.proxmox_node
   name        = "${var.cluster_name}-${each.key}"
+  vmid        = "${var.start_vmid}" + 10 + tonumber("${each.value.i}")
 
   clone = each.value.template
 
