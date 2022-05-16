@@ -3,7 +3,10 @@
 
 ####   Example arguements are commented out, these can either be removed, if they are not required, or uncommented if they are useful to you 
 
-```args are added to the k3s server and worker nodes
+
+These additonal args are added to the server -> [Server args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
+
+```
 // ....
   // These additonal args are added to the server -> [Server args ref]: (https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
   
@@ -19,11 +22,17 @@
     #"--oidc-client-id",
     #"--oidc-username-claim"
   ]
-
-  // These additonal args are added to the worker -> Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/:
   
+// ...
+```
+
+These additonal args are added to the worker -> [Server args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
+
+```
+// ....
   k3s_extra_worker_args = [
     #"--kubelet-arg node-status-update-frequency=5s"
   ]
+
 // ...
 ```
