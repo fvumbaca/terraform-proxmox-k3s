@@ -6,7 +6,7 @@
 
 These additonal args are added to the server; 
 
-   > For the full list of args see here -> [Server args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
+   > For a complete list of all k3s server options, refer to the [k3s.io documentation](https://rancher.com/docs/k3s/latest/en/installation/install-options/server-config/).
 
 ```
 // ....
@@ -30,7 +30,7 @@ These additonal args are added to the server;
 
 These additonal args are added to the worker;
 
-   > For the full list of args see here -> [Worker args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
+   > For a complete list of all k3s worker/agent options, refer to the [k3s.io documentation](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/).
 
 ```
 // ....
