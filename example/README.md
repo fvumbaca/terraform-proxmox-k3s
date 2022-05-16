@@ -15,8 +15,8 @@ This will spin up:
 ### Networking
 
 - The support VM will be spun up on `192.168.0.200`
-- The master VMs will be spun up on `192.168.0.201` and `192.168.1.202`
-- The worker VMs will be spun up on `192.168.0.208` and `192.168.1.209`
+- The master VMs will be spun up on `192.168.0.201` and `192.168.0.202`
+- The worker VMs will be spun up on `192.168.0.208` and `192.168.0.209`
 
 > Note: To eliminate potential IP clashing with existing computers on your
 network, it is **STRONGLY** recommended that  you take IPs `192.168.0.200` -
