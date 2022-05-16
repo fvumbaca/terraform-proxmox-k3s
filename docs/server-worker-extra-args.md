@@ -1,5 +1,5 @@
 
-###  Add the following to you main.tf and modify the extra arguements to your liking;   
+###  Add the following to your main.tf and modify the extra arguements to your liking;   
 
 ####   Example arguements are commented out, these can either be removed, if they are not required, or uncommented if they are useful to you 
 
