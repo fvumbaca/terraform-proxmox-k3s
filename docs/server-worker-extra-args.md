@@ -4,7 +4,7 @@
 ####   Example arguements are commented out, these can either be removed, if they are not required, or uncommented if they are useful to you 
 
 
-These additonal args are added to the server 
+These additonal args are added to the server; 
 
    > For the full list of args see here -> [Server args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
 
@@ -28,7 +28,7 @@ These additonal args are added to the server
 // ...
 ```
 
-These additonal args are added to the worker 
+These additonal args are added to the worker;
 
    > For the full list of args see here -> [Worker args ref](https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
 
