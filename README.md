@@ -52,7 +52,7 @@ module "k3s" {
     proxmox_support_node = "della3"
 
     node_template = "ubuntu-2004-cloudinit-template"
-  
+      
     network_gateway = "10.0.120.1"
     lan_subnet = "10.0.120.0/22"
   
@@ -71,12 +71,13 @@ module "k3s" {
     # 10.0.121.1 - 10.0.121.6	(6 available IPs for nodes)
     control_plane_subnet = "10.0.121.0/29"
 
+    #This number must match the number of entries for master_nodes
     master_nodes_count = 3
     #distributes the masters upon these nodes in sequential order if not specified the entry point node
-    master_nodes = ["della1","della2","della3"]
+    master_node_target_nodes = ["della1","della2","della3"]
     master_node_settings = {
         cores = 2
-        memory = 2048
+        memory = 4096
     }
 
     # 192.168.0.200 -> 192.168.0.207 (6 available IPs for nodes)
@@ -87,38 +88,40 @@ module "k3s" {
         target_node = "della1"
         size = 2
         # 110.0.121.1 - 10.0.121.6	 (6 available IPs for nodes)
-        subnet = "10.0.121.0/29"
+        subnet = "10.0.121.8/29"
         },
         {
         name = "della2"
         target_node = "della2"
         size = 2
-        # 10.0.121.9 - 10.0.121.14 (6 available IPs for nodes)
-        subnet = "10.0.121.8/29"
+        # 10.0.121.17 - 10.0.121.22 (6 available IPs for nodes)
+        subnet = "10.0.121.16/29"
         },
+        #This is a support node so gets less nodes.
         {
         name = "della3"
         target_node = "della3"
         size = 1
-        # 10.0.121.17 - 10.0.121.22 (6 available IPs for nodes)
-        subnet = "10.0.121.16/29"
+        # 10.0.121.25 - 10.0.121.30 (6 available IPs for nodes)
+        subnet = "10.0.121.24/29"
         },
         {
         name = "della4"
         target_node = "della4"
         size = 3
-        # 10.0.121.25 - 10.0.121.30 (6 available IPs for nodes)
-        subnet = "10.0.121.24/29"
+        # 10.0.121.33 - 10.0.121.38	 (14 available IPs for nodes)
+        subnet = "10.0.121.32/29"
         },
         {
         name = "della5"
         target_node = "della5"
         size = 3
-        # 10.0.121.33 - 10.0.121.38	 (14 available IPs for nodes)
-        subnet = "10.0.121.32/29"
+        # 10.0.121.41 - 10.0.121.46	 (14 available IPs for nodes)
+        subnet = "10.0.121.40	/29"
         }
     ]
 }
+
 
 output "kubeconfig" {
   # Update module name. Here we are using 'k3s'
