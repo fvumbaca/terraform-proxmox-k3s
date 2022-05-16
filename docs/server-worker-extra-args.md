@@ -5,7 +5,7 @@
 
 ```args are added to the k3s server and worker nodes
 // ....
-  // These additonal args are added to the server -> Ref: https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/:
+  // These additonal args are added to the server -> [Server args ref]: (https://rancher.com/docs/k3s/latest/en/installation/install-options/agent-config/)
   
   k3s_extra_server_args = [
     #"--write-kubeconfig-mode 644",
