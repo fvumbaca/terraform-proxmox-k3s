@@ -52,7 +52,7 @@ module "k3s" {
     proxmox_support_node = "della3"
 
     node_template = "ubuntu-2004-cloudinit-template"
-      
+
     network_gateway = "10.0.120.1"
     lan_subnet = "10.0.120.0/22"
   
@@ -146,8 +146,8 @@ output "kubeconfig" {
 Finally output the config file:
 
 ```sh
-terraform output -raw kubeconfig > config.yaml
 # Test out the config:
+terraform output -raw kubeconfig > config.yaml && kubectl --kubeconfig config.yaml get nodes
 kubectl --kubeconfig config.yaml get nodes
 ```
 
