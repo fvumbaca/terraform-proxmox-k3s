@@ -95,8 +95,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   }
 
   provisioner "remote-exec" {
-    inline = [
-      templatefile("${path.module}/scripts/install-k3s-server.sh.tftpl", {
+    inline = ["sleep 5",
+        templatefile("${path.module}/scripts/install-k3s-server.sh.tftpl", {
         mode         = "agent"
         tokens       = [random_password.k3s-server-token.result]
         alt_names    = []
@@ -106,6 +106,6 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         datastores   = []
         http_proxy  = var.http_proxy
       })
-    ]
+      ,"sleep 5"]
   }
 }
