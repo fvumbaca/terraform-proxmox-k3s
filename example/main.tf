@@ -1,26 +1,3 @@
-# terraform-proxmox-k3s-multi-node
-
-A module for spinning up an expandable and flexible K3s server for your HomeLab in a multinode Proxmox cluster.
-
-## Features
-
-- Fully automated. No need to remote into a VM; even for a kubeconfig
-- Built in and automatically configured external loadbalancer (both K3s API and ingress)
-- Static(ish) MAC addresses for reproducible DHCP reservations
-- Node pools to easily scale and to handle many kinds of workloads
-- Pure Terraform - no Ansible needed.
-
-## Prerequisites
-
-- A Proxmox node with sufficient capacity for all nodes
-- A cloneable or template VM that supports Cloud-init and is based on Debian
-  (ideally ubuntu server)
-- 2 cidr ranges for master and worker nodes NOT handed out by DHCP (nodes are
-  configured with static IPs from these ranges)
-
-## Usage and Example
-
-```terraform
 terraform{
   required_providers {
     proxmox = {
@@ -117,7 +94,7 @@ module "k3s" {
         target_node = "della5"
         size = 3
         # 10.0.121.41 - 10.0.121.46	 (14 available IPs for nodes)
-        subnet = "10.0.121.40	/29"
+        subnet = "10.0.121.40/29"
         }
     ]
 }
@@ -128,44 +105,3 @@ output "kubeconfig" {
   value = module.k3s.k3s_kubeconfig
   sensitive = true
 }
-```
-
-### Retrieve Kubeconfig
-
-To get the kubeconfig for your new K3s first make sure to forward the module
-output in your project's output:
-
-```terraform
-output "kubeconfig" {
-  # Update module name. Here we are using 'k3s'
-  value = module.k3s.k3s_kubeconfig
-  sensitive = true
-}
-```
-
-Finally output the config file:
-
-```sh
-# Test out the config:
-terraform output -raw kubeconfig > config.yaml && kubectl --kubeconfig config.yaml get nodes
-kubectl --kubeconfig config.yaml get nodes
-```
-
-> Make sure your support node is routable from the computer you are running the
-command on!
-
-## Runbooks
-
-- [How to roll (update) your nodes](docs/roll-node-pools.md)
-
-## Why use nodepools and subnets?
-
-This module is designed with nodepools and subnets to allow for changes to the
-cluster composition in the future. If later on, you want to add another master
-or worker node, you can do so without needing to teardown/modify existing
-nodes. Nodepools are key if you plan to support nodes with different nodepool
-capabilities in the future without impacting other nodes.
-
-## Todo
-
-- [ ] Add variable to allow workloads on master nodes
