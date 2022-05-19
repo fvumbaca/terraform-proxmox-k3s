@@ -32,4 +32,9 @@ stream {
         listen 443;
         proxy_pass k3s_nodes_ingress_http;
     }
+
+    server {
+        listen 80;
+        proxy_pass k3s_nodes_ingress_http;
+    }
 }
