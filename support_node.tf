@@ -7,6 +7,7 @@ locals {
     sockets = 1
     memory  = 4096
 
+    full_clone   = true
 
     storage_type = "scsi"
     storage_id   = "local-lvm"
@@ -36,6 +37,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
   name        = join("-", [var.cluster_name, "support"])
 
   clone = var.node_template
+  full_clone = local.support_node_settings.full_clone
 
   pool = var.proxmox_resource_pool
 

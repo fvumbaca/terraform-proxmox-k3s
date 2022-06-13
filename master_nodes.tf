@@ -13,6 +13,7 @@ locals {
     user           = "k3s"
     network_bridge = "vmbr0"
     network_tag    = -1
+    full_clone     = true
   })
 
   master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
@@ -34,6 +35,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   name        = "${var.cluster_name}-master-${count.index}"
 
   clone = var.node_template
+  full_clone = local.master_node_settings.full_clone
 
   pool = var.proxmox_resource_pool
 

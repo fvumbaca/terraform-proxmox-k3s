@@ -44,6 +44,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   name        = "${var.cluster_name}-${each.key}"
 
   clone = each.value.template
+  full_clone = each.value.full_clone
 
   pool = var.proxmox_resource_pool
 

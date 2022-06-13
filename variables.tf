@@ -72,7 +72,8 @@ variable "support_node_settings" {
     db_name        = optional(string),
     db_user        = optional(string),
     network_bridge = optional(string),
-    network_tag    = optional(number), 
+    network_tag    = optional(number),
+    full_clone     = optional(bool)
   })
 }
 
@@ -93,6 +94,7 @@ variable "master_node_settings" {
     user           = optional(string),
     network_bridge = optional(string),
     network_tag    = optional(number),
+    full_clone     = optional(bool)
   })
 }
 
@@ -114,6 +116,7 @@ variable "node_pools" {
     disk_size    = optional(string),
     user         = optional(string),
     network_tag  = optional(number),
+    full_clone   = optional(bool)
 
     template = optional(string),
 
