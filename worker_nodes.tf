@@ -19,6 +19,7 @@ locals {
         template       = var.node_template
         network_bridge = "vmbr0"
         network_tag    = -1
+        firewall       = true
         }), {
         i  = i
         ip = cidrhost(pool.subnet, i)
@@ -63,7 +64,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   network {
     bridge    = each.value.network_bridge
-    firewall  = true
+    firewall  = each.value.firewall
     link_down = false
     macaddr   = upper(macaddress.k3s-workers[each.key].address)
     model     = "virtio"

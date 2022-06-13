@@ -14,13 +14,10 @@ locals {
     disk_size    = "10G"
     user         = "support"
     network_tag  = -1
-
-
+    firewall     = true
 
     db_name = "k3s"
     db_user = "k3s"
-
-    
 
     network_bridge = "vmbr0"
   })
@@ -56,7 +53,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
   network {
     bridge    = local.support_node_settings.network_bridge
-    firewall  = true
+    firewall  = local.support_node_settings.firewall
     link_down = false
     macaddr   = upper(macaddress.k3s-support.address)
     model     = "virtio"

@@ -14,6 +14,7 @@ locals {
     network_bridge = "vmbr0"
     network_tag    = -1
     full_clone     = true
+    firewall       = true
   })
 
   master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
@@ -54,7 +55,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
 
   network {
     bridge    = local.master_node_settings.network_bridge
-    firewall  = true
+    firewall  = local.master_node_settings.firewall
     link_down = false
     macaddr   = upper(macaddress.k3s-masters[count.index].address)
     model     = "virtio"
