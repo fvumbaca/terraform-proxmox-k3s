@@ -8,6 +8,12 @@ variable "authorized_keys_file" {
   type        = string
 }
 
+variable "start_vmid" {
+  description = "Start vm-id for support node"
+  type        = number
+  default     = "2000"
+}
+
 variable "network_gateway" {
   description = "IP address of the network gateway."
   type        = string

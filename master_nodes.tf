@@ -32,6 +32,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   count       = var.master_nodes_count
   target_node = var.proxmox_node
   name        = "${var.cluster_name}-master-${count.index}"
+  vmid        = "${var.start_vmid}" + 5 + tonumber("${count.index}")
 
   clone = var.node_template
 
