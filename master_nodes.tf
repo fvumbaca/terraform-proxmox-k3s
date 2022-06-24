@@ -79,7 +79,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
 
   ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
-  sshkeys = file(var.authorized_keys_file)
+  sshkeys = var.authorized_keys
 
   nameserver = var.nameserver
 

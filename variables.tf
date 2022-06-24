@@ -3,8 +3,8 @@ variable "proxmox_node" {
   type        = string
 }
 
-variable "authorized_keys_file" {
-  description = "Path to file containing public SSH keys for remoting into nodes."
+variable "authorized_keys" {
+  description = "Public SSH keys for remoting into nodes (= .ssh/authorized_keys)."
   type        = string
 }
 
@@ -137,7 +137,6 @@ variable "k3s_disable_components" {
   type        = list(string)
   default     = []
 }
-
 
 variable "http_proxy" {
   default     = ""
