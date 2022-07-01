@@ -151,7 +151,7 @@ command on!
 
 ## Runbooks and Documents
 
-- [Basic cluster example](example) // not updated yet!
+- [Basic cluster example](example)
 - [How to roll (update) your nodes](docs/roll-node-pools.md)
 
 ## Why use nodepools and subnets?
