@@ -10,61 +10,70 @@ terraform {
       version = "0.3.0"
     }
   }
+
+  experiments = [module_variable_optional_attrs]
 }
 
-provider proxmox {
+provider "proxmox" {
+  pm_tls_insecure = true
+  pm_api_url = var.pm_api_url
+  pm_api_token_id = var.pm_api_token_id
+  pm_api_token_secret = var.pm_api_token_secret
   pm_log_enable = true
-  pm_log_file = "terraform-plugin-proxmox.log"
+  pm_log_file = "plugin-proxmox.log"
   pm_debug = true
   pm_log_levels = {
     _default = "debug"
     _capturelog = ""
   }
-
-  ## TODO: Update these for your specific setup
-  pm_api_url = "https://192.168.0.25:8006/api2/json"
 }
 
+locals {
+  node_pools = [
+    merge(var.vm_defaults, {
+      name = "compute"
+      size = 12
+      subnet = "10.41.2.0/24"
+      memory = 2048
+    }),
+    merge(var.vm_defaults, {
+      name = "mem"
+      size = 2
+      subnet = "10.41.3.0/24"
+      memory = 4096
+    })
+  ]
+} 
+
 module "k3s" {
-  source  = "fvumbaca/k3s/proxmox"
-  version = ">= 0.0.0, < 1" # Get latest 0.X release
+  #source  = "github.com/jan-tee/terraform-proxmox-k3s"
+  source = "./terraform-proxmox-k3s/"
+  #version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
 
-  authorized_keys_file = "authorized_keys"
+  cluster_name = "demo"
+  lan_subnet = "10.41.0.0/16"
 
-  proxmox_node = "my-proxmox-node"
+  support_node_settings = merge(var.vm_defaults, {
+    memory = 2048
+  })
 
-  node_template = "ubuntu-template"
-  proxmox_resource_pool = "my-k3s"
-
-  network_gateway = "192.168.0.1"
-  lan_subnet = "192.168.0.0/24"
-
-  support_node_settings = {
-    cores = 2
-    memory = 4096
-  }
+  # Disable default traefik and servicelb installs for metallb and traefik 2
+  k3s_disable_components = [
+    "traefik",
+    "servicelb"
+  ]
 
   master_nodes_count = 2
-  master_node_settings = {
-    cores = 2
+  master_node_settings = merge(var.vm_defaults, {
     memory = 4096
-  }
+  })
 
-  # 192.168.0.200 -> 192.168.0.207 (6 available IPs for nodes)
-  control_plane_subnet = "192.168.0.200/29"
-
-  node_pools = [
-    {
-      name = "default"
-      size = 2
-      # 192.168.0.208 -> 192.168.0.223 (14 available IPs for nodes)
-      subnet = "192.168.0.208/28"
-    }
-  ]
+  control_plane_subnet = "10.41.1.0/24"
+  node_pools = local.node_pools 
 }
 
 output "kubeconfig" {
+  # Update module name. Here we are using 'k3s'
   value = module.k3s.k3s_kubeconfig
   sensitive = true
 }
-
