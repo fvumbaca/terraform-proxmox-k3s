@@ -17,31 +17,91 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
   (ideally ubuntu server)
 - 2 cidr ranges for master and worker nodes NOT handed out by DHCP (nodes are
   configured with static IPs from these ranges)
+- SSH agent configured for a private key to authenticate to K3s nodes
 
 ## Usage
 
 > Take a look at the complete auto-generated docs on the
 [Official Registry Page](https://registry.terraform.io/modules/fvumbaca/k3s/proxmox/latest).
 
+
+Set up Terraform vars in `terraform.tfvars`:
+
 ```terraform
-module "k3s" {
-  source  = "fvumbaca/k3s/proxmox"
-  version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
+pm_api_url = "https://my.pve.server:8006/api2/json"
+pm_api_token_id = "my-terraform-api-token@pve!terraform-ve2"
+pm_api_token_secret = "my-api-secret"
 
-  authorized_keys_file = "authorized_keys"
+vm_defaults = {
+  cores = 2
+  ciuser = "terraform"
+  cipassword = "passwordtosetforCloudInitUser"
+  nameserver = "10.41.0.1"
+  searchdomain = "terraform.lab"
+  target_node = "ve2"
+  target_pool = "k8s"
+  image_id = "template-cloudinit-ubuntu2104"
+  full_clone = false
+  firewall = false
+  disk_size = "20G"
+  memory = 2048
+  storage_id = "zfs"
+  subnet = "10.41.0.0/16"
+  gw = "10.41.0.1"
+  network_bridge = "vmbr1"
+  network_tag = 2000
+  # put your authorized_keys content below this line, before the end-of-file marker
+  authorized_keys = <<EOF
+    ssh-rsa AAAAB3N...mkbNl user@host
+    EOF
+}
+``` 
 
-  proxmox_node = "my-proxmox-node"
+```terraform
+terraform {
+  required_providers {
+    proxmox = {
+      source = "Telmate/proxmox"
+      version = "2.9.3"
+    }
 
-  node_template = "ubuntu-template"
-  proxmox_resource_pool = "my-k3s"
-
-  network_gateway = "192.168.0.1"
-  lan_subnet = "192.168.0.0/24"
-
-  support_node_settings = {
-    cores = 2
-    memory = 4096
+    macaddress = {
+      source = "ivoronin/macaddress"
+      version = "0.3.0"
+    }
   }
+
+  experiments = [module_variable_optional_attrs]
+}
+
+locals {
+  node_pools = [
+    merge(var.vm_defaults, {
+      name = "compute"
+      size = 12
+      subnet = "10.41.2.0/24"
+      memory = 2048
+    }),
+    merge(var.vm_defaults, {
+      name = "mem"
+      size = 2
+      subnet = "10.41.3.0/24"
+      memory = 4096
+    })
+  ]
+} 
+
+module "k3s" {
+  source  = "github.com/jan-tee/terraform-proxmox-k3s"
+  # source = "./terraform-proxmox-k3s/"
+  # version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
+
+  cluster_name = "demo"
+  lan_subnet = "10.41.0.0/16"
+
+  support_node_settings = merge(var.vm_defaults, {
+    memory = 2048
+  })
 
   # Disable default traefik and servicelb installs for metallb and traefik 2
   k3s_disable_components = [
@@ -50,22 +110,18 @@ module "k3s" {
   ]
 
   master_nodes_count = 2
-  master_node_settings = {
-    cores = 2
+  master_node_settings = merge(var.vm_defaults, {
     memory = 4096
-  }
+  })
 
-  # 192.168.0.200 -> 192.168.0.207 (6 available IPs for nodes)
-  control_plane_subnet = "192.168.0.200/29"
+  control_plane_subnet = "10.41.1.0/24"
+  node_pools = local.node_pools 
+}
 
-  node_pools = [
-    {
-      name = "default"
-      size = 2
-      # 192.168.0.208 -> 192.168.0.223 (14 available IPs for nodes)
-      subnet = "192.168.0.208/28"
-    }
-  ]
+output "kubeconfig" {
+  # Update module name. Here we are using 'k3s'
+  value = module.k3s.k3s_kubeconfig
+  sensitive = true
 }
 ```
 
@@ -95,7 +151,7 @@ command on!
 
 ## Runbooks and Documents
 
-- [Basic cluster example](example)
+- [Basic cluster example](example) // not updated yet!
 - [How to roll (update) your nodes](docs/roll-node-pools.md)
 
 ## Why use nodepools and subnets?

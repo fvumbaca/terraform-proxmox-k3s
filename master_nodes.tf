@@ -10,7 +10,7 @@ locals {
     storage_type   = "scsi"
     storage_id     = "local-lvm"
     disk_size      = "20G"
-    user           = "k3s"
+    ciuser         = "k3s"
     network_bridge = "vmbr0"
     network_tag    = -1
     full_clone     = true
@@ -32,20 +32,20 @@ resource "proxmox_vm_qemu" "k3s-master" {
   ]
 
   count       = var.master_nodes_count
-  target_node = var.proxmox_node
+  target_node = var.master_node_settings.target_node
   name        = "${var.cluster_name}-master-${count.index}"
 
-  clone = var.node_template
+  clone = local.master_node_settings.image_id
   full_clone = local.master_node_settings.full_clone
 
-  pool = var.proxmox_resource_pool
+  pool = var.master_node_settings.target_pool
 
   # cores = 2
   cores   = local.master_node_settings.cores
   sockets = local.master_node_settings.sockets
   memory  = local.master_node_settings.memory
 
-  agent = 1
+  agent   = 1
 
   disk {
     type    = local.master_node_settings.storage_type
@@ -69,23 +69,24 @@ resource "proxmox_vm_qemu" "k3s-master" {
       ciuser,
       sshkeys,
       disk,
-      network
+      network,
+      desc
     ]
   }
 
   os_type = "cloud-init"
 
-  ciuser = local.master_node_settings.user
+  ciuser = local.master_node_settings.ciuser
 
-  ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
+  ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${local.master_node_settings.gw}"
 
-  sshkeys = var.authorized_keys
+  sshkeys = local.master_node_settings.authorized_keys
 
-  nameserver = var.nameserver
+  nameserver = local.master_node_settings.nameserver
 
   connection {
     type = "ssh"
-    user = local.master_node_settings.user
+    user = local.master_node_settings.ciuser
     host = local.master_node_ips[count.index]
   }
 
@@ -121,7 +122,7 @@ data "external" "kubeconfig" {
     "/usr/bin/ssh",
     "-o UserKnownHostsFile=/dev/null",
     "-o StrictHostKeyChecking=no",
-    "${local.master_node_settings.user}@${local.master_node_ips[0]}",
+    "${local.master_node_settings.ciuser}@${local.master_node_ips[0]}",
     "echo '{\"kubeconfig\":\"'$(sudo cat /etc/rancher/k3s/k3s.yaml | base64)'\"}'"
   ]
 }

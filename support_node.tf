@@ -12,7 +12,7 @@ locals {
     storage_type = "scsi"
     storage_id   = "local-lvm"
     disk_size    = "10G"
-    user         = "support"
+    ciuser       = "support"
     network_tag  = -1
     firewall     = true
 
@@ -30,21 +30,21 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "k3s-support" {
-  target_node = var.proxmox_node
+  target_node = var.support_node_settings.target_node
   name        = join("-", [var.cluster_name, "support"])
 
-  clone = var.node_template
+  clone = local.support_node_settings.image_id
   full_clone = local.support_node_settings.full_clone
 
-  pool = var.proxmox_resource_pool
+  pool = var.support_node_settings.target_pool
 
   # cores = 2
   cores   = local.support_node_settings.cores
   sockets = local.support_node_settings.sockets
   memory  = local.support_node_settings.memory
 
+  agent   = 1
 
-  agent = 1
   disk {
     type    = local.support_node_settings.storage_type
     storage = local.support_node_settings.storage_id
@@ -67,23 +67,24 @@ resource "proxmox_vm_qemu" "k3s-support" {
       ciuser,
       sshkeys,
       disk,
-      network
+      network,
+      desc
     ]
   }
 
   os_type = "cloud-init"
 
-  ciuser = local.support_node_settings.user
+  ciuser = local.support_node_settings.ciuser
 
-  ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
+  ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${local.support_node_settings.gw}"
 
-  sshkeys = var.authorized_keys
+  sshkeys = local.support_node_settings.authorized_keys
 
-  nameserver = var.nameserver
+  nameserver = local.support_node_settings.nameserver
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = local.support_node_settings.ciuser
     host = local.support_node_ip
   }
 
@@ -133,7 +134,7 @@ resource "null_resource" "k3s_nginx_config" {
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = local.support_node_settings.ciuser
     host = local.support_node_ip
   }
 

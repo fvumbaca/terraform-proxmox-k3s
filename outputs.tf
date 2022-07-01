@@ -26,7 +26,7 @@ output "support_node_ip" {
 }
 
 output "support_node_user" {
-  value = local.support_node_settings.user
+  value = local.support_node_settings.ciuser
 }
 
 output "master_node_ips" {

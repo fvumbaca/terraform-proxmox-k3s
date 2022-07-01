@@ -15,8 +15,7 @@ locals {
         storage_type   = "scsi"
         storage_id     = "local-lvm"
         disk_size      = "20G"
-        user           = "k3s"
-        template       = var.node_template
+        ciuser         = "k3s"
         network_bridge = "vmbr0"
         network_tag    = -1
         firewall       = true
@@ -41,13 +40,13 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   for_each = local.mapped_worker_nodes
 
-  target_node = var.proxmox_node
+  target_node = each.value.target_node
   name        = "${var.cluster_name}-${each.key}"
 
-  clone = each.value.template
+  clone = each.value.image_id
   full_clone = each.value.full_clone
 
-  pool = var.proxmox_resource_pool
+  pool = each.value.target_pool
 
   # cores = 2
   cores   = each.value.cores
@@ -78,23 +77,24 @@ resource "proxmox_vm_qemu" "k3s-worker" {
       ciuser,
       sshkeys,
       disk,
-      network
+      network,
+      desc
     ]
   }
 
   os_type = "cloud-init"
 
-  ciuser = each.value.user
+  ciuser = each.value.ciuser
 
-  ipconfig0 = "ip=${each.value.ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
+  ipconfig0 = "ip=${each.value.ip}/${local.lan_subnet_cidr_bitnum},gw=${each.value.gw}"
 
-  sshkeys = var.authorized_keys
+  sshkeys = each.value.authorized_keys
 
-  nameserver = var.nameserver
+  nameserver = each.value.nameserver
 
   connection {
     type = "ssh"
-    user = each.value.user
+    user = each.value.ciuser
     host = each.value.ip
   }
 

@@ -1,23 +1,3 @@
-variable "proxmox_node" {
-  description = "Proxmox node to create VMs on."
-  type        = string
-}
-
-variable "authorized_keys" {
-  description = "Public SSH keys for remoting into nodes (= .ssh/authorized_keys)."
-  type        = string
-}
-
-variable "network_gateway" {
-  description = "IP address of the network gateway."
-  type        = string
-  validation {
-    # condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.network_gateway))
-    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$", var.network_gateway))
-    error_message = "The network_gateway value must be a valid ip."
-  }
-}
-
 variable "lan_subnet" {
   description = <<EOF
 Subnet used by the LAN network. Note that only the bit count number at the end
@@ -46,20 +26,6 @@ variable "cluster_name" {
   description = "Name of the cluster used for prefixing cluster components (ie nodes)."
 }
 
-variable "node_template" {
-  type        = string
-  description = <<EOF
-Proxmox vm to use as a base template for all nodes. Can be a template or
-another vm that supports cloud-init.
-EOF
-}
-
-variable "proxmox_resource_pool" {
-  description = "Resource pool name to use in proxmox to better organize nodes."
-  type        = string
-  default     = ""
-}
-
 variable "support_node_settings" {
   type = object({
     cores          = optional(number),
@@ -68,13 +34,20 @@ variable "support_node_settings" {
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
-    user           = optional(string),
+    ciuser         = optional(string),
+    image_id       = string,
+    authorized_keys = string,
     db_name        = optional(string),
     db_user        = optional(string),
     network_bridge = optional(string),
     network_tag    = optional(number),
     full_clone     = optional(bool),
-    firewall       = optional(bool)
+    firewall       = optional(bool),
+    nameserver     = string,
+    searchdomain   = string,
+    gw             = string,
+    target_node    = string,
+    target_pool    = string
   })
 }
 
@@ -92,11 +65,19 @@ variable "master_node_settings" {
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
-    user           = optional(string),
+    ciuser         = optional(string),
+    image_id       = string,
+    authorized_keys = string,
     network_bridge = optional(string),
     network_tag    = optional(number),
     full_clone     = optional(bool),
     firewall       = optional(bool)
+    nameserver     = string,
+    searchdomain   = string,
+    gw             = string,
+    target_node    = string,
+    target_pool    = string
+
   })
 }
 
@@ -113,19 +94,30 @@ variable "node_pools" {
     cores        = optional(number),
     sockets      = optional(number),
     memory       = optional(number),
+    image_id       = string,
     storage_type = optional(string),
     storage_id   = optional(string),
     disk_size    = optional(string),
-    user         = optional(string),
+    ciuser       = optional(string),
+    authorized_keys = string,
     network_tag  = optional(number),
     full_clone   = optional(bool),
-    firewall     = optional(bool)
+    firewall     = optional(bool),
+
+    nameserver     = string,
+    searchdomain   = string,
+    gw             = string
 
     template = optional(string),
 
     network_bridge = optional(string),
+
+    target_node    = string,
+    target_pool    = string
+
   }))
 }
+
 variable "api_hostnames" {
   description = "Alternative hostnames for the API server."
   type        = list(string)
@@ -142,10 +134,4 @@ variable "http_proxy" {
   default     = ""
   type        = string
   description = "http_proxy"
-}
-
-variable "nameserver" {
-  default     = ""
-  type        = string
-  description = "nameserver"
 }
