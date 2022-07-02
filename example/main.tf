@@ -52,6 +52,7 @@ module "k3s" {
 
   cluster_name = "demo"
   lan_subnet = "10.41.0.0/16"
+  ciuser = var.ciuser
 
   support_node_settings = merge(var.vm_defaults, {
     memory = 2048

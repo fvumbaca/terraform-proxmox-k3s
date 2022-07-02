@@ -32,10 +32,10 @@ pm_api_url = "https://my.pve.server:8006/api2/json"
 pm_api_token_id = "my-terraform-api-token@pve!terraform-ve2"
 pm_api_token_secret = "my-api-secret"
 
+ciuser = "terraform"
+
 vm_defaults = {
   cores = 2
-  ciuser = "terraform"
-  cipassword = "passwordtosetforCloudInitUser"
   nameserver = "10.41.0.1"
   searchdomain = "terraform.lab"
   target_node = "ve2"

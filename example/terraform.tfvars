@@ -2,10 +2,10 @@ pm_api_url = "https://...:8006/api2/json"
 pm_api_token_id = "..."
 pm_api_token_secret = "..."
 
+ciuser = "terraform"
+
 vm_defaults = {
   cores = 2
-  ciuser = "terraform"
-  cipassword = "..."
   nameserver = "10.41.0.1"
   searchdomain = "terraform.lab"
   target_node = "ve2"
