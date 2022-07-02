@@ -1,3 +1,10 @@
+export DEBIAN_FRONTEND=noninteractive
+until [ -f /var/lib/cloud/instance/boot-finished ] ; do
+  sleep 1
+done
+
+sudo -E apt install nfs-common -y
+
 export HTTP_PROXY="${http_proxy}"
 export HTTPS_PROXY="${http_proxy}"
 export http_proxy="${http_proxy}"

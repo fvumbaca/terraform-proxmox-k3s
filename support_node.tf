@@ -12,7 +12,6 @@ locals {
     storage_type = "scsi"
     storage_id   = "local-lvm"
     disk_size    = "10G"
-    ciuser       = "support"
     network_tag  = -1
     firewall     = true
 
@@ -73,39 +72,28 @@ resource "proxmox_vm_qemu" "k3s-support" {
   }
 
   os_type = "cloud-init"
-
-  ciuser = local.support_node_settings.ciuser
-
+  ciuser = var.ciuser
   ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${local.support_node_settings.gw}"
-
   sshkeys = local.support_node_settings.authorized_keys
-
   nameserver = local.support_node_settings.nameserver
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.ciuser
+    user = var.ciuser
     host = local.support_node_ip
-  }
-
-  provisioner "file" {
-    destination = "/tmp/install.sh"
-    content = templatefile("${path.module}/scripts/install-support-apps.sh.tftpl", {
-      root_password = random_password.support-db-password.result
-
-      k3s_database = local.support_node_settings.db_name
-      k3s_user     = local.support_node_settings.db_user
-      k3s_password = random_password.k3s-master-db-password.result
-      
-      http_proxy  = var.http_proxy
-    })
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod u+x /tmp/install.sh",
-      "/tmp/install.sh",
-      "rm -r /tmp/install.sh",
+      templatefile("${path.module}/scripts/install-support.sh.tftpl", {
+        root_password = random_password.support-db-password.result
+
+        k3s_database = local.support_node_settings.db_name
+        k3s_user     = local.support_node_settings.db_user
+        k3s_password = random_password.k3s-master-db-password.result
+      
+        http_proxy  = var.http_proxy
+      })
     ]
   }
 }
@@ -123,7 +111,6 @@ resource "random_password" "k3s-master-db-password" {
 }
 
 resource "null_resource" "k3s_nginx_config" {
-
   depends_on = [
     proxmox_vm_qemu.k3s-support
   ]
@@ -134,7 +121,7 @@ resource "null_resource" "k3s_nginx_config" {
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.ciuser
+    user = var.ciuser
     host = local.support_node_ip
   }
 

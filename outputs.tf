@@ -21,16 +21,16 @@ output "root_db_password" {
   sensitive = true
 }
 
-output "support_node_ip" {
+output "k3s_support_node_ip" {
   value = local.support_node_ip
 }
 
-output "support_node_user" {
-  value = local.support_node_settings.ciuser
+output "user" {
+  value = var.ciuser
 }
 
-output "master_node_ips" {
-  value = local.master_node_ips
+output "k3s_worker_node_ips" {
+  value = local.worker_node_ips
 }
 
 output "k3s_server_token" {

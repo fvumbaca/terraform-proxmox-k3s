@@ -34,7 +34,6 @@ variable "support_node_settings" {
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
-    ciuser         = optional(string),
     image_id       = string,
     authorized_keys = string,
     db_name        = optional(string),
@@ -65,7 +64,6 @@ variable "master_node_settings" {
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
-    ciuser         = optional(string),
     image_id       = string,
     authorized_keys = string,
     network_bridge = optional(string),
@@ -98,7 +96,6 @@ variable "node_pools" {
     storage_type = optional(string),
     storage_id   = optional(string),
     disk_size    = optional(string),
-    ciuser       = optional(string),
     authorized_keys = string,
     network_tag  = optional(number),
     full_clone   = optional(bool),
@@ -134,4 +131,9 @@ variable "http_proxy" {
   default     = ""
   type        = string
   description = "http_proxy"
+}
+
+variable "ciuser" {
+  type = string
+  description = "Cloud-Init User"
 }

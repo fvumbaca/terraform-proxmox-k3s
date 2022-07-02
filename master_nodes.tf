@@ -10,7 +10,6 @@ locals {
     storage_type   = "scsi"
     storage_id     = "local-lvm"
     disk_size      = "20G"
-    ciuser         = "k3s"
     network_bridge = "vmbr0"
     network_tag    = -1
     full_clone     = true
@@ -75,18 +74,14 @@ resource "proxmox_vm_qemu" "k3s-master" {
   }
 
   os_type = "cloud-init"
-
-  ciuser = local.master_node_settings.ciuser
-
+  ciuser = var.ciuser
   ipconfig0 = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${local.master_node_settings.gw}"
-
   sshkeys = local.master_node_settings.authorized_keys
-
   nameserver = local.master_node_settings.nameserver
 
   connection {
     type = "ssh"
-    user = local.master_node_settings.ciuser
+    user = var.ciuser
     host = local.master_node_ips[count.index]
   }
 
@@ -122,7 +117,7 @@ data "external" "kubeconfig" {
     "/usr/bin/ssh",
     "-o UserKnownHostsFile=/dev/null",
     "-o StrictHostKeyChecking=no",
-    "${local.master_node_settings.ciuser}@${local.master_node_ips[0]}",
+    "${var.ciuser}@${local.master_node_ips[0]}",
     "echo '{\"kubeconfig\":\"'$(sudo cat /etc/rancher/k3s/k3s.yaml | base64)'\"}'"
   ]
 }

@@ -15,7 +15,6 @@ locals {
         storage_type   = "scsi"
         storage_id     = "local-lvm"
         disk_size      = "20G"
-        ciuser         = "k3s"
         network_bridge = "vmbr0"
         network_tag    = -1
         firewall       = true
@@ -30,6 +29,7 @@ locals {
     for node in local.listed_worker_nodes : "${node.name}-${node.i}" => node
   }
 
+  worker_node_ips = [for node in local.mapped_worker_nodes : node.ip]
 }
 
 resource "proxmox_vm_qemu" "k3s-worker" {
@@ -83,18 +83,14 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   }
 
   os_type = "cloud-init"
-
-  ciuser = each.value.ciuser
-
+  ciuser = var.ciuser
   ipconfig0 = "ip=${each.value.ip}/${local.lan_subnet_cidr_bitnum},gw=${each.value.gw}"
-
   sshkeys = each.value.authorized_keys
-
   nameserver = each.value.nameserver
 
   connection {
     type = "ssh"
-    user = each.value.ciuser
+    user = var.ciuser
     host = each.value.ip
   }
 
@@ -113,5 +109,4 @@ resource "proxmox_vm_qemu" "k3s-worker" {
       })
     ]
   }
-
 }

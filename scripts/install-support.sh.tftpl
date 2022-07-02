@@ -1,4 +1,7 @@
-#!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+until [ -f /var/lib/cloud/instance/boot-finished ] ; do
+  sleep 1
+done
 
 MARIADB_ROOT_PASSWORD="${root_password}"
 MARIADB_K3S_DATABASE="${k3s_database}"
@@ -36,5 +39,10 @@ nginx() {
     sudo -E apt install nginx -y
 }
 
+addons() {
+    sudo -E apt install nfs-common -y
+}
+
+addons
 mariadb
 nginx
