@@ -7,6 +7,7 @@ locals {
     cores          = 2
     sockets        = 1
     memory         = 4096
+    balloon        = 2048
     storage_type   = "scsi"
     storage_id     = "local-lvm"
     disk_size      = "20G"
@@ -39,10 +40,10 @@ resource "proxmox_vm_qemu" "k3s-master" {
 
   pool = var.master_node_settings.target_pool
 
-  # cores = 2
   cores   = local.master_node_settings.cores
   sockets = local.master_node_settings.sockets
   memory  = local.master_node_settings.memory
+  balloon = local.master_node_settings.balloon
 
   agent   = 1
 
@@ -93,6 +94,8 @@ resource "proxmox_vm_qemu" "k3s-master" {
         alt_names    = concat([local.support_node_ip], var.api_hostnames)
         server_hosts = []
         node_taints  = ["CriticalAddonsOnly=true:NoExecute"]
+        node_labels  = []
+        private_registry_url = var.private_registry_url
         disable      = var.k3s_disable_components
         datastores = [{
           host     = "${local.support_node_ip}:3306"

@@ -26,7 +26,20 @@ curl -sfL https://get.k3s.io | sh -s - ${mode} \
 %{ for taint in node_taints ~}
 --node-taint "${ taint }" \
 %{ endfor ~}
+%{ for label in node_labels ~}
+--node-label "${ label }" \
+%{ endfor ~}
 %{ for db in datastores ~}
 --datastore-endpoint="mysql://${db.user}:${db.password}@tcp(${db.host})/${db.name}" \
 %{ endfor ~}
 --log $HOME/.k3s-install-log.txt
+
+%{ if private_registry_url != "" ~}
+sudo -E mkdir -p /etc/rancher/k3s
+sudo -E bash -c 'cat > /etc/rancher/k3s/registries.yaml' <<EOM
+configs:
+  ${private_registry_url}:
+    tls:
+      insecure_skip_verify: true
+EOM
+%{ endif ~}

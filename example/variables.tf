@@ -26,6 +26,7 @@ variable "vm_defaults" {
     image_id = string,
     full_clone = bool,
     memory = number,
+    balloon = number,
     target_pool = optional(string)
 
     nameserver = string,

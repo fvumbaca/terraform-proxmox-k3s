@@ -35,12 +35,14 @@ locals {
       size = 12
       subnet = "10.41.2.0/24"
       memory = 2048
+      balloon = 2048
     }),
     merge(var.vm_defaults, {
       name = "mem"
       size = 2
       subnet = "10.41.3.0/24"
       memory = 4096
+      balloon = 2048
     })
   ]
 } 
@@ -54,8 +56,15 @@ module "k3s" {
   lan_subnet = "10.41.0.0/16"
   ciuser = var.ciuser
 
+  # uncommment this if you want to enable a local registry with an untrusted
+  # certificate with this URL - you can only do this before you create the
+  # cluster:
+  #
+  # private_registry_url = "docker-registry.customer.lab" 
+
   support_node_settings = merge(var.vm_defaults, {
     memory = 2048
+    balloon = 2048
   })
 
   # Disable default traefik and servicelb installs for metallb and traefik 2
@@ -67,6 +76,7 @@ module "k3s" {
   master_nodes_count = 2
   master_node_settings = merge(var.vm_defaults, {
     memory = 4096
+    balloon = 4096
   })
 
   control_plane_subnet = "10.41.1.0/24"

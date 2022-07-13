@@ -12,6 +12,7 @@ locals {
         cores          = 2
         sockets        = 1
         memory         = 4096
+        balloon        = 512
         storage_type   = "scsi"
         storage_id     = "local-lvm"
         disk_size      = "20G"
@@ -48,10 +49,10 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   pool = each.value.target_pool
 
-  # cores = 2
   cores   = each.value.cores
   sockets = each.value.sockets
   memory  = each.value.memory
+  balloon = each.value.balloon
 
   agent = 1
 
@@ -103,6 +104,8 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         disable      = []
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
+        node_labels  = []
+        private_registry_url = var.private_registry_url
         datastores   = []
 
         http_proxy  = var.http_proxy

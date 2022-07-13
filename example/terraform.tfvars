@@ -15,6 +15,7 @@ vm_defaults = {
   firewall = false
   disk_size = "20G"
   memory = 2048
+  balloon = 2048
   storage_id = "zfs"
   subnet = "10.41.0.0/16"
   gw = "10.41.0.1"

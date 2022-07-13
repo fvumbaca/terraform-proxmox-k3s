@@ -9,6 +9,7 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
 - Static(ish) MAC addresses for reproducible DHCP reservations
 - Node pools to easily scale and to handle many kinds of workloads
 - Pure Terraform - no Ansible needed.
+- Support for a private Docker registry (requires changes on each node, performed by this module)
 
 ## Prerequisites
 
@@ -24,130 +25,19 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
 > Take a look at the complete auto-generated docs on the
 [Official Registry Page](https://registry.terraform.io/modules/fvumbaca/k3s/proxmox/latest).
 
+1. Set up Terraform vars in `terraform.tfvars`.  
+   Use the file from (examples/)[examples/terraform.tfvars] as a starter.
+1. Set up a `main.tf` to use the module. Edit as needed (for cluster size, node pool configuration).  
+   Use the file from (examples/)[examples/main.tf] as a starter.
+1. Run `terraform plan`, `terraform apply`.
+1. Retrieve the `kubeconfig` file from the terraform outputs:  
+  ```sh
+  terraform output -raw kubeconfig > config.yaml
+  # Test out the config:
+  kubectl --kubeconfig config.yaml get nodes
+  ```
 
-Set up Terraform vars in `terraform.tfvars`:
-
-```terraform
-pm_api_url = "https://my.pve.server:8006/api2/json"
-pm_api_token_id = "my-terraform-api-token@pve!terraform-ve2"
-pm_api_token_secret = "my-api-secret"
-
-ciuser = "terraform"
-
-vm_defaults = {
-  cores = 2
-  nameserver = "10.41.0.1"
-  searchdomain = "terraform.lab"
-  target_node = "ve2"
-  target_pool = "k8s"
-  image_id = "template-cloudinit-ubuntu2104"
-  full_clone = false
-  firewall = false
-  disk_size = "20G"
-  memory = 2048
-  storage_id = "zfs"
-  subnet = "10.41.0.0/16"
-  gw = "10.41.0.1"
-  network_bridge = "vmbr1"
-  network_tag = 2000
-  # put your authorized_keys content below this line, before the end-of-file marker
-  authorized_keys = <<EOF
-    ssh-rsa AAAAB3N...mkbNl user@host
-    EOF
-}
-``` 
-
-```terraform
-terraform {
-  required_providers {
-    proxmox = {
-      source = "Telmate/proxmox"
-      version = "2.9.3"
-    }
-
-    macaddress = {
-      source = "ivoronin/macaddress"
-      version = "0.3.0"
-    }
-  }
-
-  experiments = [module_variable_optional_attrs]
-}
-
-locals {
-  node_pools = [
-    merge(var.vm_defaults, {
-      name = "compute"
-      size = 12
-      subnet = "10.41.2.0/24"
-      memory = 2048
-    }),
-    merge(var.vm_defaults, {
-      name = "mem"
-      size = 2
-      subnet = "10.41.3.0/24"
-      memory = 4096
-    })
-  ]
-} 
-
-module "k3s" {
-  source  = "github.com/jan-tee/terraform-proxmox-k3s"
-  # source = "./terraform-proxmox-k3s/"
-  # version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
-
-  cluster_name = "demo"
-  lan_subnet = "10.41.0.0/16"
-
-  support_node_settings = merge(var.vm_defaults, {
-    memory = 2048
-  })
-
-  # Disable default traefik and servicelb installs for metallb and traefik 2
-  k3s_disable_components = [
-    "traefik",
-    "servicelb"
-  ]
-
-  master_nodes_count = 2
-  master_node_settings = merge(var.vm_defaults, {
-    memory = 4096
-  })
-
-  control_plane_subnet = "10.41.1.0/24"
-  node_pools = local.node_pools 
-}
-
-output "kubeconfig" {
-  # Update module name. Here we are using 'k3s'
-  value = module.k3s.k3s_kubeconfig
-  sensitive = true
-}
-```
-
-### Retrieve Kubeconfig
-
-To get the kubeconfig for your new K3s first make sure to forward the module
-output in your project's output:
-
-```terraform
-output "kubeconfig" {
-  # Update module name. Here we are using 'k3s'
-  value = module.k3s.k3s_kubeconfig
-  sensitive = true
-}
-```
-
-Finally output the config file:
-
-```sh
-terraform output -raw kubeconfig > config.yaml
-# Test out the config:
-kubectl --kubeconfig config.yaml get nodes
-```
-
-> Make sure your support node is routable from the computer you are running the
-command on!
+> Make sure your support node is routable from the computer you are running the command on!
 
 ## Runbooks and Documents
 

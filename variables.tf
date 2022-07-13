@@ -31,6 +31,7 @@ variable "support_node_settings" {
     cores          = optional(number),
     sockets        = optional(number),
     memory         = optional(number),
+    balloon        = optional(number),
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
@@ -61,6 +62,7 @@ variable "master_node_settings" {
     cores          = optional(number),
     sockets        = optional(number),
     memory         = optional(number),
+    balloon        = optional(number),
     storage_type   = optional(string),
     storage_id     = optional(string),
     disk_size      = optional(string),
@@ -92,6 +94,7 @@ variable "node_pools" {
     cores        = optional(number),
     sockets      = optional(number),
     memory       = optional(number),
+    balloon       = optional(number),
     image_id       = string,
     storage_type = optional(string),
     storage_id   = optional(string),
@@ -136,4 +139,10 @@ variable "http_proxy" {
 variable "ciuser" {
   type = string
   description = "Cloud-Init User"
+}
+
+variable "private_registry_url" {
+  type = string
+  description = "FQDN of a private Docker registry that should be accessible to k3s"
+  default = null
 }

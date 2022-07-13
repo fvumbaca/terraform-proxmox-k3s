@@ -6,6 +6,7 @@ locals {
     cores   = 2
     sockets = 1
     memory  = 4096
+    balloon = 2048
 
     full_clone   = true
 
@@ -41,6 +42,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
   cores   = local.support_node_settings.cores
   sockets = local.support_node_settings.sockets
   memory  = local.support_node_settings.memory
+  balloon = local.support_node_settings.balloon
 
   agent   = 1
 
