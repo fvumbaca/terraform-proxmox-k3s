@@ -13,7 +13,3 @@ terraform {
 
   experiments = [module_variable_optional_attrs]
 }
-
-locals {
-  authorized_keyfile = "authorized_keys"
-}

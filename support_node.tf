@@ -6,20 +6,18 @@ locals {
     cores   = 2
     sockets = 1
     memory  = 4096
+    balloon = 2048
 
+    full_clone   = true
 
     storage_type = "scsi"
     storage_id   = "local-lvm"
     disk_size    = "10G"
-    user         = "support"
     network_tag  = -1
-
-
+    firewall     = true
 
     db_name = "k3s"
     db_user = "k3s"
-
-    
 
     network_bridge = "vmbr0"
   })
@@ -32,20 +30,22 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "k3s-support" {
-  target_node = var.proxmox_node
+  target_node = var.support_node_settings.target_node
   name        = join("-", [var.cluster_name, "support"])
 
-  clone = var.node_template
+  clone = local.support_node_settings.image_id
+  full_clone = local.support_node_settings.full_clone
 
-  pool = var.proxmox_resource_pool
+  pool = var.support_node_settings.target_pool
 
   # cores = 2
   cores   = local.support_node_settings.cores
   sockets = local.support_node_settings.sockets
   memory  = local.support_node_settings.memory
+  balloon = local.support_node_settings.balloon
 
+  agent   = 1
 
-  agent = 1
   disk {
     type    = local.support_node_settings.storage_type
     storage = local.support_node_settings.storage_id
@@ -54,7 +54,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
   network {
     bridge    = local.support_node_settings.network_bridge
-    firewall  = true
+    firewall  = local.support_node_settings.firewall
     link_down = false
     macaddr   = upper(macaddress.k3s-support.address)
     model     = "virtio"
@@ -68,44 +68,34 @@ resource "proxmox_vm_qemu" "k3s-support" {
       ciuser,
       sshkeys,
       disk,
-      network
+      network,
+      desc
     ]
   }
 
   os_type = "cloud-init"
-
-  ciuser = local.support_node_settings.user
-
-  ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
-
-  sshkeys = file(var.authorized_keys_file)
-
-  nameserver = var.nameserver
+  ciuser = var.ciuser
+  ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${local.support_node_settings.gw}"
+  sshkeys = local.support_node_settings.authorized_keys
+  nameserver = local.support_node_settings.nameserver
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = var.ciuser
     host = local.support_node_ip
-  }
-
-  provisioner "file" {
-    destination = "/tmp/install.sh"
-    content = templatefile("${path.module}/scripts/install-support-apps.sh.tftpl", {
-      root_password = random_password.support-db-password.result
-
-      k3s_database = local.support_node_settings.db_name
-      k3s_user     = local.support_node_settings.db_user
-      k3s_password = random_password.k3s-master-db-password.result
-      
-      http_proxy  = var.http_proxy
-    })
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod u+x /tmp/install.sh",
-      "/tmp/install.sh",
-      "rm -r /tmp/install.sh",
+      templatefile("${path.module}/scripts/install-support.sh.tftpl", {
+        root_password = random_password.support-db-password.result
+
+        k3s_database = local.support_node_settings.db_name
+        k3s_user     = local.support_node_settings.db_user
+        k3s_password = random_password.k3s-master-db-password.result
+      
+        http_proxy  = var.http_proxy
+      })
     ]
   }
 }
@@ -123,7 +113,6 @@ resource "random_password" "k3s-master-db-password" {
 }
 
 resource "null_resource" "k3s_nginx_config" {
-
   depends_on = [
     proxmox_vm_qemu.k3s-support
   ]
@@ -134,7 +123,7 @@ resource "null_resource" "k3s_nginx_config" {
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = var.ciuser
     host = local.support_node_ip
   }
 
