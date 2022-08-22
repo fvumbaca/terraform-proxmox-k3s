@@ -17,10 +17,10 @@ mariadb() {
     sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\10.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
 
     # Replicate mysql_secure_installation script
-    sudo mariadb -e "UPDATE mysql.user SET Password=PASSWORD('$MARIADB_ROOT_PASSWORD') WHERE User='root'"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User=''"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
-    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'"
+    sudo mariadb -e "UPDATE mysql.global_priv SET priv=json_set(priv, '$.plugin', 'mysql_native_password', '$.authentication_string', PASSWORD('$MARIADB_ROOT_PASSWORD')) WHERE User='root'"
+    sudo mariadb -e "DELETE FROM mysql.global_priv WHERE User=''"
+    sudo mariadb -e "DELETE FROM mysql.global_priv WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%'"
 
     # Setup db and user for k3s
     sudo mariadb -e "CREATE DATABASE IF NOT EXISTS $MARIADB_K3S_DATABASE"
