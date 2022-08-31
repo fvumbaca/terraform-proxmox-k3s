@@ -84,6 +84,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
     type = "ssh"
     user = local.master_node_settings.user
     host = local.master_node_ips[count.index]
+    private_key = file("${var.private_key}")
   }
 
   provisioner "remote-exec" {
