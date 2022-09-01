@@ -137,6 +137,7 @@ resource "null_resource" "k3s_nginx_config" {
     type = "ssh"
     user = local.support_node_settings.user
     host = local.support_node_ip
+    private_key = file("${var.private_key}")
   }
 
   provisioner "file" {
