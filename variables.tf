@@ -8,6 +8,12 @@ variable "authorized_keys_file" {
   type        = string
 }
 
+variable "private_key" {
+  description = "Path to file containing private SSH key for remoting into nodes. The corresponding public key must be found in authorized_keys_file."
+  type        = string
+  default     = "~/.ssh/id_rsa"
+}
+
 variable "network_gateway" {
   description = "IP address of the network gateway."
   type        = string
