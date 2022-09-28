@@ -26,9 +26,9 @@ A module for spinning up an expandable and flexible K3s server for your HomeLab.
 [Official Registry Page](https://registry.terraform.io/modules/fvumbaca/k3s/proxmox/latest).
 
 1. Set up Terraform vars in `terraform.tfvars`.  
-   Use the file from (examples/)[examples/terraform.tfvars] as a starter.
+   Use the file from [example/](example/terraform.tfvars) as a starter.
 1. Set up a `main.tf` to use the module. Edit as needed (for cluster size, node pool configuration).  
-   Use the file from (examples/)[examples/main.tf] as a starter.
+   Use the file from [example/](example/main.tf) as a starter.
 1. Run `terraform plan`, `terraform apply`.
 1. Retrieve the `kubeconfig` file from the terraform outputs:  
   ```sh
