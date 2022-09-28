@@ -7,7 +7,6 @@ locals {
     cores          = 2
     sockets        = 1
     memory         = 4096
-    balloon        = 2048
     storage_type   = "scsi"
     storage_id     = "local-lvm"
     disk_size      = "20G"
@@ -43,7 +42,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   cores   = local.master_node_settings.cores
   sockets = local.master_node_settings.sockets
   memory  = local.master_node_settings.memory
-  balloon = local.master_node_settings.balloon
+  balloon = local.master_node_settings.memory # no ballooning on master nodes - too dangerous
 
   agent   = 1
 
