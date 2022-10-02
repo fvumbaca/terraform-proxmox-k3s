@@ -34,12 +34,13 @@ curl -sfL https://get.k3s.io | sh -s - ${mode} \
 %{ endfor ~}
 --log $HOME/.k3s-install-log.txt
 
-%{ if private_registry_url != "" ~}
 sudo -E mkdir -p /etc/rancher/k3s
 sudo -E bash -c 'cat > /etc/rancher/k3s/registries.yaml' <<EOM
+%{ for registry in insecure_registries ~}
 configs:
-  ${private_registry_url}:
+  ${registry}:
     tls:
       insecure_skip_verify: true
+%{ endfor ~}
 EOM
-%{ endif ~}
+

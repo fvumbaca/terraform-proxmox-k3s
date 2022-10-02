@@ -2,6 +2,10 @@
 
 This is an example project for setting up your own K3s cluster at home.
 
+## Requirements
+
+This requires Terraform 1.30+.
+
 ## Summary
 
 ### VMs
@@ -10,18 +14,19 @@ This will spin up:
 
 - 1 support vm with api loadbalancer and k3s database with 2 cores and 4Gb mem
 - 2 master nodes with 2 cores and 4Gb mem
-- 1 node pool with 2 worker nodes each having 2 cores and 4Gb mem
+- 1 node pool with 20 worker nodes each having 2 cores and 4Gb mem
 
 ### Networking
 
-- The support VM will be spun up on `10.41.1.0`
-- The master VMs will be spun up on `10.41.1.1...2`
-- The worker VMs will be spun up on `10.41.2.0...` and `10.41.3.0...`
+- The support VM will be spun up on `192.168.42.200`
+- The master VMs will be spun up on `192.168.42.201`, `192.168.42.202`
+- The worker VMs will be spun up on `192.168.42.205...214`
 
 > Note: To eliminate potential IP clashing with existing computers on your
-network, it is **STRONGLY** recommended that  you take IPs `10.41.1.0-10.42.3.255`
-out of your DHCP server's rotation. Otherwise other computers in your network
-may already be using these IPs and that will create conflicts!
+network, it is **STRONGLY** recommended that  you take IPs
+`192.168.42.200-214` out of your DHCP server's rotation. Otherwise
+other computers in your network may already be using these IPs and
+that will create conflicts!
 
 Check your router's manual or google it for a step-by-step guide.
 
@@ -40,8 +45,9 @@ then
    ssh-add ~/.ssh/id_rsa
    ```
 2. Find your Proxmox API. It should look something like
-   `https://192.168.0.25:8006/api2/json`. Once you found it, update the value
-   in the `terraform.tfvars` file.
+   `https://192.168.0.25:8006/api2/json`. Once you found it, set the
+   values to the env vars: `PM_API_URL`, `PM_API_TOKEN_ID` and
+   `PM_API_TOKEN_SECRET`.
 3. Run `terraform init` (only needs to be done the first time)
 4. Run `terraform apply`
 5. Review the plan. Make sure it is doing what you expect!

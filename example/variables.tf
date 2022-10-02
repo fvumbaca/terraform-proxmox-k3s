@@ -1,15 +1,3 @@
-variable "pm_api_url" {
-  type = string
-}
-
-variable "pm_api_token_id" {
-  type = string
-}
-
-variable "pm_api_token_secret" {
-  type = string
-}
-
 variable "ciuser" {
   type = string
 }
@@ -41,3 +29,21 @@ variable "vm_defaults" {
     authorized_keys = string
   })
 } 
+
+variable "lan_subnet" {
+  type = string
+}
+
+variable "control_plane_subnet" {
+  type = string
+}
+
+variable "cluster_name" {
+  type = string
+}
+
+variable "insecure_registries" {
+  type = list(string)
+  default = []
+}
+

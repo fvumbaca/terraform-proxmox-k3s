@@ -3,31 +3,21 @@ resource "macaddress" "k3s-workers" {
 }
 
 locals {
-
   listed_worker_nodes = flatten([
     for pool in var.node_pools :
     [
       for i in range(pool.size) :
-      merge(defaults(pool, {
-        cores          = 2
-        sockets        = 1
-        memory         = 4096
-        balloon        = 512
-        storage_type   = "scsi"
-        storage_id     = "local-lvm"
-        disk_size      = "20G"
-        network_bridge = "vmbr0"
-        network_tag    = -1
-        firewall       = true
-        }), {
-        i  = i
-        ip = cidrhost(pool.subnet, i)
-      })
+        merge({
+          i              = i
+        }, pool)
     ]
   ])
 
   mapped_worker_nodes = {
-    for node in local.listed_worker_nodes : "${node.name}-${node.i}" => node
+    for node in local.listed_worker_nodes : "${node.name}-${node.i}" =>
+      merge(node, {
+        ip               = cidrhost(node.subnet, node.i + node.ip_offset)
+      })
   }
 
   worker_node_ips = [for node in local.mapped_worker_nodes : node.ip]
@@ -79,7 +69,9 @@ resource "proxmox_vm_qemu" "k3s-worker" {
       sshkeys,
       disk,
       network,
-      desc
+      desc,
+      searchdomain,
+      bootdisk
     ]
   }
 
@@ -105,7 +97,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         server_hosts = ["https://${local.support_node_ip}:6443"]
         node_taints  = each.value.taints
         node_labels  = []
-        private_registry_url = var.private_registry_url
+        insecure_registries = var.insecure_registries
         datastores   = []
 
         http_proxy  = var.http_proxy

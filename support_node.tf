@@ -2,27 +2,8 @@
 resource "macaddress" "k3s-support" {}
 
 locals {
-  support_node_settings = defaults(var.support_node_settings, {
-    cores   = 2
-    sockets = 1
-    memory  = 4096
-    balloon = 2048
-
-    full_clone   = true
-
-    storage_type = "scsi"
-    storage_id   = "local-lvm"
-    disk_size    = "10G"
-    network_tag  = -1
-    firewall     = true
-
-    db_name = "k3s"
-    db_user = "k3s"
-
-    network_bridge = "vmbr0"
-  })
-
-  support_node_ip = cidrhost(var.control_plane_subnet, 0)
+  support_node_settings = var.support_node_settings
+  support_node_ip = cidrhost(var.control_plane_subnet, local.support_node_settings.ip_offset)
 }
 
 locals {
@@ -69,7 +50,9 @@ resource "proxmox_vm_qemu" "k3s-support" {
       sshkeys,
       disk,
       network,
-      desc
+      desc,
+      searchdomain,
+      bootdisk
     ]
   }
 
@@ -134,7 +117,7 @@ resource "null_resource" "k3s_nginx_config" {
         "${ip}:6443"
       ]
       k3s_nodes = concat(local.master_node_ips, [
-        for node in local.listed_worker_nodes :
+        for node in local.mapped_worker_nodes :
         node.ip
       ])
     })

@@ -28,26 +28,27 @@ variable "cluster_name" {
 
 variable "support_node_settings" {
   type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    balloon        = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
-    image_id       = string,
+    cores           = optional(number, 2),
+    sockets         = optional(number, 1),
+    memory          = optional(number, 4096),
+    balloon         = optional(number, 4096),
+    storage_type    = optional(string, "scsi"),
+    storage_id      = optional(string, "local-lvm"),
+    disk_size       = optional(string, "10G"),
+    image_id        = string,
     authorized_keys = string,
-    db_name        = optional(string),
-    db_user        = optional(string),
-    network_bridge = optional(string),
-    network_tag    = optional(number),
-    full_clone     = optional(bool),
-    firewall       = optional(bool),
-    nameserver     = string,
-    searchdomain   = string,
-    gw             = string,
-    target_node    = string,
-    target_pool    = string
+    db_name         = optional(string, "k3s"),
+    db_user         = optional(string, "krs"),
+    network_bridge  = optional(string, "vmbr0"),
+    network_tag     = optional(number, -1),
+    ip_offset       = optional(number, 10),
+    full_clone      = optional(bool, true),
+    firewall        = optional(bool, true),
+    nameserver      = string,
+    searchdomain    = string,
+    gw              = string,
+    target_node     = string,
+    target_pool     = string
   })
 }
 
@@ -59,19 +60,20 @@ variable "master_nodes_count" {
 
 variable "master_node_settings" {
   type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    balloon        = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
+    cores          = optional(number, 2),
+    sockets        = optional(number, 1),
+    memory         = optional(number, "4096"),
+    balloon        = optional(number, "4096"),
+    storage_type   = optional(string, "scsi"),
+    storage_id     = optional(string, "local-lvm"),
+    disk_size      = optional(string, "20G"),
     image_id       = string,
     authorized_keys = string,
-    network_bridge = optional(string),
-    network_tag    = optional(number),
-    full_clone     = optional(bool),
-    firewall       = optional(bool)
+    network_bridge = optional(string, "vmbr0"),
+    network_tag    = optional(number, -1),
+    ip_offset      = optional(number, 2),
+    full_clone     = optional(bool, true),
+    firewall       = optional(bool, true)
     nameserver     = string,
     searchdomain   = string,
     gw             = string,
@@ -84,36 +86,36 @@ variable "master_node_settings" {
 variable "node_pools" {
   description = "Node pool definitions for the cluster."
   type = list(object({
+    name            = string,
+    size            = number,
+    subnet          = string,
 
-    name   = string,
-    size   = number,
-    subnet = string,
+    taints          = optional(list(string)),
 
-    taints = optional(list(string)),
-
-    cores        = optional(number),
-    sockets      = optional(number),
-    memory       = optional(number),
-    balloon       = optional(number),
-    image_id       = string,
-    storage_type = optional(string),
-    storage_id   = optional(string),
-    disk_size    = optional(string),
+    cores           = optional(number, 2),
+    sockets         = optional(number, 1),
+    memory          = optional(number, 4096),
+    balloon         = optional(number, 4096),
+    image_id        = string,
+    storage_type    = optional(string, "scsi"),
+    storage_id      = optional(string, "local-lvm"),
+    disk_size       = optional(string, "20G"),
     authorized_keys = string,
-    network_tag  = optional(number),
-    full_clone   = optional(bool),
-    firewall     = optional(bool),
+    network_tag     = optional(number, -1),
+    full_clone      = optional(bool, true),
+    firewall        = optional(bool, true),
 
-    nameserver     = string,
-    searchdomain   = string,
-    gw             = string
+    nameserver      = string,
+    searchdomain    = string,
+    gw              = string
 
-    template = optional(string),
+    template        = optional(string),
 
-    network_bridge = optional(string),
+    network_bridge  = optional(string, "vmbr0"),
+    ip_offset       = optional(number, 10),
 
-    target_node    = string,
-    target_pool    = string
+    target_node     = string,
+    target_pool     = string
 
   }))
 }
@@ -141,8 +143,8 @@ variable "ciuser" {
   description = "Cloud-Init User"
 }
 
-variable "private_registry_url" {
-  type = string
-  description = "FQDN of a private Docker registry that should be accessible to k3s"
-  default = null
+variable "insecure_registries" {
+  type = list(string)
+  description = "FQDNs of 'insecure' (private, untrusted CA signed cert, or plaintext HTTP) Docker registries that should be accessible to k3s"
+  default = []
 }

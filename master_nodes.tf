@@ -3,20 +3,8 @@ resource "macaddress" "k3s-masters" {
 }
 
 locals {
-  master_node_settings = defaults(var.master_node_settings, {
-    cores          = 2
-    sockets        = 1
-    memory         = 4096
-    storage_type   = "scsi"
-    storage_id     = "local-lvm"
-    disk_size      = "20G"
-    network_bridge = "vmbr0"
-    network_tag    = -1
-    full_clone     = true
-    firewall       = true
-  })
-
-  master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
+  master_node_settings = var.master_node_settings
+  master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + local.master_node_settings.ip_offset)]
 }
 
 resource "random_password" "k3s-server-token" {
@@ -69,7 +57,9 @@ resource "proxmox_vm_qemu" "k3s-master" {
       sshkeys,
       disk,
       network,
-      desc
+      desc,
+      searchdomain,
+      bootdisk
     ]
   }
 
@@ -94,7 +84,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
         server_hosts = []
         node_taints  = ["CriticalAddonsOnly=true:NoExecute"]
         node_labels  = []
-        private_registry_url = var.private_registry_url
+        insecure_registries = var.insecure_registries
         disable      = var.k3s_disable_components
         datastores = [{
           host     = "${local.support_node_ip}:3306"
