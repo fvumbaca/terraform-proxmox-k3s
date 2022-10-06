@@ -1,34 +1,70 @@
-variable "ciuser" {
-  type = string
+variable "default_node_settings" {
+  type = object({
+    cores           = optional(number, 2),
+    sockets         = optional(number, 1),
+    storage_id      = string,
+    disk_type       = optional(string, "scsi"),
+    disk_size       = optional(string),
+    firewall        = optional(bool, false),
+    image_id        = string,
+    full_clone      = optional(bool, false),
+    memory          = number,
+    balloon         = number,
+    target_pool     = optional(string)
+    nameserver      = string,
+    searchdomain    = string
+    network_bridge  = optional(string, "vmbr0"),
+    network_tag     = optional(number, -1),
+    subnet          = optional(string),
+    gw              = string,
+    target_node     = optional(string),
+    target_pool     = string,
+    authorized_keys = string,
+    ciuser          = string,
+  })
 }
 
-variable "vm_defaults" {
+variable "node_pools" {
+  type = list(object({
+    name      = string,
+    size      = number,
+    subnet    = optional(string),
+    ip_offset = number,
+    memory    = optional(number),
+    balloon   = optional(number),
+    cores     = optional(number),
+    sockets   = optional(number),
+    disk_size = optional(number),
+  }))
+  description = "The definition of node pools to create"
+}
+
+variable "master_node_settings" {
   type = object({
-    vcpus = optional(number),
-    cores = optional(number),
-    sockets = optional(number),
-    storage_id = string,
-    disk_type = optional(string),
-    disk_size = optional(string),
-    firewall = optional(bool),
-    image_id = string,
-    full_clone = bool,
-    memory = number,
-    balloon = number,
-    target_pool = optional(string)
-
-    nameserver = string,
-    searchdomain = string
-    network_bridge = optional(string),
-    network_tag = optional(number),
-    subnet = optional(string),
-    gw = string,
-
-    target_node = optional(string),
-    target_pool = string,
-    authorized_keys = string
+    count     = optional(number, 2),
+    subnet    = optional(string),
+    ip_offset = number,
+    memory    = optional(number),
+    balloon   = optional(number),
+    cores     = optional(number),
+    sockets   = optional(number),
+    disk_size = optional(number),
   })
-} 
+  description = "The definition of master nodes"
+}
+
+variable "support_node_settings" {
+  type = object({
+    subnet    = optional(string),
+    ip_offset = number,
+    memory    = optional(number),
+    balloon   = optional(number),
+    cores     = optional(number),
+    sockets   = optional(number),
+    disk_size = optional(number),
+  })
+  description = "The definition of support node settings"
+}
 
 variable "lan_subnet" {
   type = string
@@ -43,7 +79,7 @@ variable "cluster_name" {
 }
 
 variable "insecure_registries" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 

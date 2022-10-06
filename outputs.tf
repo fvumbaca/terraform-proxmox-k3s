@@ -5,11 +5,11 @@ output "k3s_db_password" {
 }
 
 output "k3s_db_name" {
-  value = local.support_node_settings.db_name
+  value = var.support_node_settings.db_name
 }
 
 output "k3s_db_user" {
-  value = local.support_node_settings.db_user
+  value = var.support_node_settings.db_user
 }
 
 output "k3s_db_host" {
@@ -23,10 +23,6 @@ output "root_db_password" {
 
 output "k3s_support_node_ip" {
   value = local.support_node_ip
-}
-
-output "user" {
-  value = var.ciuser
 }
 
 output "k3s_worker_node_ips" {
