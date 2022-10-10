@@ -1,6 +1,7 @@
 cluster_name         = "bart"
 lan_subnet           = "192.168.42.0/24"
 control_plane_subnet = "192.168.42.0/24"
+insecure_registries = [ "registry.k8s.lab" ]
 
 default_node_settings = {
   nameserver   = "192.168.42.1"
