@@ -2,7 +2,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "Telmate/proxmox"
-      version = "2.9.3"
+      version = "2.9.11"
     }
 
     macaddress = {
@@ -10,8 +10,6 @@ terraform {
       version = "0.3.0"
     }
   }
-
-  experiments = [module_variable_optional_attrs]
 }
 
 locals {

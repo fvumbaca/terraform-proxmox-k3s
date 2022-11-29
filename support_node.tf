@@ -2,28 +2,6 @@
 resource "macaddress" "k3s-support" {}
 
 locals {
-  support_node_settings = defaults(var.support_node_settings, {
-    cores   = 2
-    sockets = 1
-    memory  = 4096
-
-
-    storage_type = "scsi"
-    storage_id   = "local-lvm"
-    disk_size    = "10G"
-    user         = "support"
-    network_tag  = -1
-
-
-
-    db_name = "k3s"
-    db_user = "k3s"
-
-    
-
-    network_bridge = "vmbr0"
-  })
-
   support_node_ip = cidrhost(var.control_plane_subnet, 0)
 }
 
@@ -40,27 +18,27 @@ resource "proxmox_vm_qemu" "k3s-support" {
   pool = var.proxmox_resource_pool
 
   # cores = 2
-  cores   = local.support_node_settings.cores
-  sockets = local.support_node_settings.sockets
-  memory  = local.support_node_settings.memory
+  cores   = var.support_node_settings.cores
+  sockets = var.support_node_settings.sockets
+  memory  = var.support_node_settings.memory
 
 
   agent = 1
   disk {
-    type    = local.support_node_settings.storage_type
-    storage = local.support_node_settings.storage_id
-    size    = local.support_node_settings.disk_size
+    type    = var.support_node_settings.storage_type
+    storage = var.support_node_settings.storage_id
+    size    = var.support_node_settings.disk_size
   }
 
   network {
-    bridge    = local.support_node_settings.network_bridge
+    bridge    = var.support_node_settings.network_bridge
     firewall  = true
     link_down = false
     macaddr   = upper(macaddress.k3s-support.address)
     model     = "virtio"
     queues    = 0
     rate      = 0
-    tag       = local.support_node_settings.network_tag
+    tag       = var.support_node_settings.network_tag
   }
 
   lifecycle {
@@ -74,7 +52,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
   os_type = "cloud-init"
 
-  ciuser = local.support_node_settings.user
+  ciuser = var.support_node_settings.user
 
   ipconfig0 = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${var.network_gateway}"
 
@@ -84,7 +62,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = var.support_node_settings.user
     host = local.support_node_ip
   }
 
@@ -93,8 +71,8 @@ resource "proxmox_vm_qemu" "k3s-support" {
     content = templatefile("${path.module}/scripts/install-support-apps.sh.tftpl", {
       root_password = random_password.support-db-password.result
 
-      k3s_database = local.support_node_settings.db_name
-      k3s_user     = local.support_node_settings.db_user
+      k3s_database = var.support_node_settings.db_name
+      k3s_user     = var.support_node_settings.db_user
       k3s_password = random_password.k3s-master-db-password.result
       
       http_proxy  = var.http_proxy
@@ -134,7 +112,7 @@ resource "null_resource" "k3s_nginx_config" {
 
   connection {
     type = "ssh"
-    user = local.support_node_settings.user
+    user = var.support_node_settings.user
     host = local.support_node_ip
   }
 

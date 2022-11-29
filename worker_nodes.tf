@@ -8,20 +8,10 @@ locals {
     for pool in var.node_pools :
     [
       for i in range(pool.size) :
-      merge(defaults(pool, {
-        cores          = 2
-        sockets        = 1
-        memory         = 4096
-        storage_type   = "scsi"
-        storage_id     = "local-lvm"
-        disk_size      = "20G"
-        user           = "k3s"
-        template       = var.node_template
-        network_bridge = "vmbr0"
-        network_tag    = -1
-        }), {
-        i  = i
-        ip = cidrhost(pool.subnet, i)
+      merge(pool, {
+        i        = i
+        ip       = cidrhost(pool.subnet, i)
+        template = coalesce(pool.template, var.node_template)
       })
     ]
   ])
@@ -107,7 +97,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         node_taints  = each.value.taints
         datastores   = []
 
-        http_proxy  = var.http_proxy
+        http_proxy = var.http_proxy
       })
     ]
   }
