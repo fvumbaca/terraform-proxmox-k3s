@@ -8,23 +8,11 @@ locals {
     for pool in var.node_pools :
     [
       for i in range(pool.size) :
-      {
-        cores          = coalesce(pool.cores, 2)
-        sockets        = coalesce(pool.sockets, 1)
-        memory         = coalesce(pool.memory, 4096)
-        storage_type   = coalesce(pool.storage_type, "scsi")
-        storage_id     = coalesce(pool.storage_id, "local-lvm")
-        disk_size      = coalesce(pool.disk_size, "20G")
-        user           = coalesce(pool.user, "k3s")
-        network_bridge = coalesce(pool.network_bridge, "vmbr0")
-        network_tag    = coalesce(pool.network_tag, -1)
-
-        name = pool.name
-        taints = coalesce(pool.taints, [])
+      merge(pool, {
+        i        = i
+        ip       = cidrhost(pool.subnet, i)
         template = var.node_template
-        i  = i
-        ip = cidrhost(pool.subnet, i)
-      }
+      })
     ]
   ])
 
@@ -109,7 +97,7 @@ resource "proxmox_vm_qemu" "k3s-worker" {
         node_taints  = each.value.taints
         datastores   = []
 
-        http_proxy  = var.http_proxy
+        http_proxy = var.http_proxy
       })
     ]
   }
