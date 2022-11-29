@@ -11,7 +11,7 @@ locals {
       merge(pool, {
         i        = i
         ip       = cidrhost(pool.subnet, i)
-        template = var.node_template
+        template = coalesce(pool.template, var.node_template)
       })
     ]
   ])
