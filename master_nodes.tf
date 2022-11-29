@@ -3,17 +3,19 @@ resource "macaddress" "k3s-masters" {
 }
 
 locals {
-  master_node_settings = defaults(var.master_node_settings, {
-    cores          = 2
-    sockets        = 1
-    memory         = 4096
-    storage_type   = "scsi"
-    storage_id     = "local-lvm"
-    disk_size      = "20G"
-    user           = "k3s"
-    network_bridge = "vmbr0"
-    network_tag    = -1
-  })
+  master_node_settings = {
+    cores          = coalesce(var.master_node_settings.cores, 2)
+    sockets        = coalesce(var.master_node_settings.sockets, 1)
+    memory         = coalesce(var.master_node_settings.memory, 4096)
+    storage_type   = coalesce(var.master_node_settings.storage_type, "scsi")
+    storage_id     = coalesce(var.master_node_settings.storage_id, "local-lvm")
+    disk_size      = coalesce(var.master_node_settings.disk_size, "20G")
+    user           = coalesce(var.master_node_settings.user, "k3s")
+    network_bridge = coalesce(var.master_node_settings.network_bridge, "vmbr0")
+    network_tag    = coalesce(var.master_node_settings.network_tag, -1)
+
+    template       = var.node_template
+  }
 
   master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
 }

@@ -8,21 +8,23 @@ locals {
     for pool in var.node_pools :
     [
       for i in range(pool.size) :
-      merge(defaults(pool, {
-        cores          = 2
-        sockets        = 1
-        memory         = 4096
-        storage_type   = "scsi"
-        storage_id     = "local-lvm"
-        disk_size      = "20G"
-        user           = "k3s"
-        template       = var.node_template
-        network_bridge = "vmbr0"
-        network_tag    = -1
-        }), {
+      {
+        cores          = coalesce(pool.cores, 2)
+        sockets        = coalesce(pool.sockets, 1)
+        memory         = coalesce(pool.memory, 4096)
+        storage_type   = coalesce(pool.storage_type, "scsi")
+        storage_id     = coalesce(pool.storage_id, "local-lvm")
+        disk_size      = coalesce(pool.disk_size, "20G")
+        user           = coalesce(pool.user, "k3s")
+        network_bridge = coalesce(pool.network_bridge, "vmbr0")
+        network_tag    = coalesce(pool.network_tag, -1)
+
+        name = pool.name
+        taints = coalesce(pool.taints, [])
+        template = var.node_template
         i  = i
         ip = cidrhost(pool.subnet, i)
-      })
+      }
     ]
   ])
 
