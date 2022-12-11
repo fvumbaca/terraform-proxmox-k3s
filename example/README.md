@@ -8,21 +8,19 @@ This is an example project for setting up your own K3s cluster at home.
 
 This will spin up:
 
-- 1 support vm with api loadbalancer and k3s database with 2 cores and 4Gb mem
-- 3 master nodes with 2 cores and 4Gb mem
-- 2 node pool with 2 worker nodes each having 2 cores and 4Gb mem
-- 2 node pool with 3 worker nodes each having 2 cores and 4Gb mem
-- 1 node pool with 1 worker nodes each having 2 cores and 4Gb mem
+- 1 support vm with api loadbalancer and k3s database with 2 cores and 8Gb mem
+- 1 master nodes with 2 cores and 8Gb mem
+- 2 node pool with 2 worker nodes each having 2 cores and 8Gb mem
+
 
 ### Networking
 
-- The support VM will be spun up on nodes `della3` using at `10.0.120.0`
-- The master VMs will be spun up on nodes `della1`,`della2`, and`della3` at `10.0.121.1-10.0.121.7`
-- The work VMs will be spun up on nodes `della1`,`della2`,`della3`,`della4` and`della5` at `10.0.121.7-10.0.121.46`
+- The support VM will be spun up on nodes `titan` using at `10.0.6.0`
+- The master VM will be spun up on nodes `titan` using at `10.0.6.1`
+- The worker VMs will be spun up on nodes `titan` at `10.0.6.8-10.0.6.23`
 
 > Note: To eliminate potential IP clashing with existing computers on your
-network, it is **STRONGLY** recommended that  you take IPs `10.0.120.50` -
-`10.0.123.255` out of your DHCP server's rotation. Otherwise other computers
+network, it is **STRONGLY** recommended that you take IPs out of your DHCP server's rotation. Otherwise other computers
 in your network may already be using these IPs and that will create conflicts!
 Check your router's manual or google it for a step-by-step guide.
 
@@ -34,14 +32,14 @@ then
    should be able to do this by running
    `cat ~/.ssh/id_rsa.pub > authorized_keys`.
 2. Find your Proxmox API. It should look something like
-   `https://10.0.120.0:8006/api2/json`. Once you found it, update the value
+   `https://10.0.0.6:8006/api2/json`. Once you found it, update the value
    in the `main.tf` file marked as `TODO` in the `provider proxmox` section.
 3. Authenticate to the proxmox API **for the current terminal session** by setting the two variables:
   ```
   # Update these to be your proxmox user/password.
   # Note that you usually need to keep the @pam at the end of the user.
-  export PM_USER="terraform-prov@pve"
-  export PM_PASS="password"
+  export PM_API_TOKEN_ID="root@pam!nytesolutions"
+  export PM_API_TOKEN_SECRET="something-something-something-something"
   ```
 
   > Find other ways to auth to proxmox by reading [the providor's docs](https://github.com/Telmate/terraform-provider-proxmox/blob/master/docs/index.md).

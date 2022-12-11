@@ -71,72 +71,91 @@ variable "proxmox_resource_pool" {
   default     = ""
 }
 
-variable "support_node_settings" {
-  type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
-    user           = optional(string),
-    db_name        = optional(string),
-    db_user        = optional(string),
-    network_bridge = optional(string),
-    network_tag    = optional(number), 
-  })
-}
-
-variable "master_nodes_count" {
-  description = "Number of master nodes."
-  default     = 2
-  type        = number
-}
 variable "master_node_target_nodes" {
   description = "Names of master nodes, distributes the master in order of this list. Must be one to one mapping."
   default     = []
   type        = list(string)
 }
-
-variable "master_node_settings" {
+variable "support_node_settings" {
+  description = "Default settings values for support nodes"
   type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
-    user           = optional(string),
-    network_bridge = optional(string),
-    network_tag    = optional(number),
+    cores          = number,
+    sockets        = number,
+    memory         = number,
+    storage_type   = string,
+    storage_id     = string,
+    disk_size      = string,
+    user           = string,
+    db_user        = string,
+    db_name        = string,
+    network_bridge = string,
+    network_tag    = number,
   })
+  default = {
+    cores   = 2
+    sockets = 1
+    memory  = 4096
+    storage_type = "scsi"
+    storage_id   = "local-lvm"
+    disk_size    = "10G"
+    user         = "support"
+    network_tag  = -1
+    db_name = "k3s"
+    db_user = "k3s"
+    network_bridge = "vmbr0"
+  }
+}
+variable "master_node_settings" {
+  description = "Default settings values for master nodes"
+  type = object({
+    cores          = number,
+    sockets        = number,
+    memory         = number,
+    storage_type   = string,
+    storage_id     = string,
+    disk_size      = string,
+    user           = string,
+    network_bridge = string,
+    network_tag    = number,
+  })
+  default = {
+    cores          = 2
+    sockets        = 1
+    memory         = 4096
+    storage_type   = "scsi"
+    storage_id     = "local-lvm"
+    disk_size      = "20G"
+    user           = "k3s"
+    network_bridge = "vmbr0"
+    network_tag    = -1
+    user           = "k3s"
+  }
 }
 
 
 variable "node_pools" {
   description = "Node pool definitions for the cluster."
   type = list(object({
-
-    name   = string,
     size   = number,
     subnet = string,
-
-    taints = optional(list(string)),
-
-    cores        = optional(number),
-    sockets      = optional(number),
-    memory       = optional(number),
-    storage_type = optional(string),
-    storage_id   = optional(string),
-    disk_size    = optional(string),
-    user         = optional(string),
-    network_tag  = optional(number),
-    target_node  = optional(string),
-    template     = optional(string),
-
-    network_bridge = optional(string),
+    target_node  = string,
+    node_pool_settings = object({
+    name           = string,
+    taints         = list(string),
+    cores          = number,
+    sockets        = number,
+    memory         = number,
+    storage_type   = string,
+    storage_id     = string,
+    disk_size      = string,
+    user           = string,
+    network_bridge = string,
+    network_tag    = number,
+  })
   }))
+  
 }
+
 variable "api_hostnames" {
   description = "Alternative hostnames for the API server."
   type        = list(string)

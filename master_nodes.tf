@@ -1,20 +1,9 @@
 resource "macaddress" "k3s-masters" {
-  count = var.master_nodes_count
+  count = length(var.master_node_target_nodes)
 }
 locals {
-  master_node_settings = defaults(var.master_node_settings, {
-    cores          = 2
-    sockets        = 1
-    memory         = 4096
-    storage_type   = "scsi"
-    storage_id     = "local-lvm"
-    disk_size      = "20G"
-    user           = "k3s"
-    network_bridge = "vmbr0"
-    network_tag    = -1
-  })
-
-  master_node_ips = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + 1)]
+  master_node_settings = var.master_node_settings
+  master_node_ips = [for i in range(length(var.master_node_target_nodes)) : cidrhost(var.control_plane_subnet, i + 1)]
 }
 
 resource "random_password" "k3s-server-token" {
@@ -28,12 +17,10 @@ resource "proxmox_vm_qemu" "k3s-master" {
     proxmox_vm_qemu.k3s-support,
   ]
 
-  count       = var.master_nodes_count
-  target_node = length(var.master_node_target_nodes) == 0 ? var.proxmox_node :var.master_node_target_nodes[count.index]
+  count       = length(var.master_node_target_nodes)
+  target_node = length(var.master_node_target_nodes) == 0 ? var.proxmox_node : var.master_node_target_nodes[count.index]
   name        = "${var.cluster_name}-master-${count.index}"
-
   clone = var.node_template
-
   pool = var.proxmox_resource_pool
 
   # cores = 2
