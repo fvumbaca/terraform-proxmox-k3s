@@ -8,9 +8,12 @@ locals {
     [
       for i in range(pool.size) :
       merge({
-        i = i
-        subnet = coalesce(pool.subnet, var.default_node_settings.subnet)
-      }, pool)
+          i = i
+        },
+          pool,
+        {
+          subnet = coalesce(pool.subnet, var.default_node_settings.subnet)
+        })
     ]
   ])
 
