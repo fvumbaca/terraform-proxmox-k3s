@@ -112,7 +112,6 @@ variable "node_pools" {
   type = list(object({
     name            = string,
     size            = number,
-    subnet          = string,
     taints          = optional(list(string)),
     authorized_keys = optional(string),
     cores           = optional(number),
