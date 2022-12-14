@@ -44,10 +44,9 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   cores       = coalesce(each.value.cores, var.default_node_settings.cores)
   sockets     = coalesce(each.value.sockets, var.default_node_settings.sockets)
   memory      = coalesce(each.value.memory, var.default_node_settings.memory)
-  balloon     = coalesce(each.value.balloon, var.default_node_settings.balloon)
   ciuser      = each.value.ciuser
   ipconfig0   = "ip=${each.value.ip}/${local.lan_subnet_cidr_bitnum},gw=${each.value.gw}"
-  sshkeys     = each.value.authorized_keys
+  sshkeys     = coalesce(each.value.authorized_keys, var.default_node_settings.authorized_keys)
   nameserver  = coalesce(each.value.nameserver, var.default_node_settings.nameserver)
   os_type     = "cloud-init"
   agent       = 1

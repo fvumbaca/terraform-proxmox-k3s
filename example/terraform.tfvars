@@ -11,7 +11,6 @@ default_node_settings = {
   image_id     = "template-cloudinit-ubuntu2204"
   disk_size    = "30G"
   memory       = 4096
-  balloon      = 4096
   storage_id   = "vms-01"
   subnet       = "192.168.42.0/24"
   gw           = "192.168.42.1"

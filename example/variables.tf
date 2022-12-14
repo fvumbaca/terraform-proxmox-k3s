@@ -9,7 +9,6 @@ variable "default_node_settings" {
     image_id        = string,
     full_clone      = optional(bool, false),
     memory          = number,
-    balloon         = number,
     target_pool     = optional(string)
     nameserver      = string,
     searchdomain    = string
@@ -31,7 +30,6 @@ variable "node_pools" {
     subnet    = optional(string),
     ip_offset = number,
     memory    = optional(number),
-    balloon   = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
     disk_size = optional(number),
@@ -45,7 +43,6 @@ variable "master_node_settings" {
     subnet    = optional(string),
     ip_offset = number,
     memory    = optional(number),
-    balloon   = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
     disk_size = optional(number),
@@ -58,7 +55,6 @@ variable "support_node_settings" {
     subnet    = optional(string),
     ip_offset = number,
     memory    = optional(number),
-    balloon   = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
     disk_size = optional(number),

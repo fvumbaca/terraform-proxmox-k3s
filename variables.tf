@@ -37,7 +37,6 @@ variable "default_node_settings" {
     image_id        = string,
     full_clone      = bool,
     memory          = number,
-    balloon         = number,
     target_pool     = optional(string, "local-lvm")
     nameserver      = string,
     searchdomain    = string
@@ -55,7 +54,6 @@ variable "default_node_settings" {
 variable "support_node_settings" {
   type = object({
     authorized_keys = optional(string),
-    balloon         = optional(number),
     cores           = optional(number),
     db_name         = optional(string, "k3s"),
     db_user         = optional(string, "k3s"),
@@ -88,7 +86,6 @@ variable "master_nodes_count" {
 variable "master_node_settings" {
   type = object({
     authorized_keys = optional(string),
-    balloon         = optional(number),
     cores           = optional(number),
     disk_size       = optional(string),
     disk_type       = optional(string),
@@ -118,7 +115,6 @@ variable "node_pools" {
     subnet          = string,
     taints          = optional(list(string)),
     authorized_keys = optional(string),
-    balloon         = optional(number),
     cores           = optional(number),
     disk_size       = optional(string),
     disk_type       = optional(string),

@@ -16,7 +16,6 @@ resource "proxmox_vm_qemu" "k3s-support" {
   cores       = coalesce(var.support_node_settings.cores, var.default_node_settings.cores)
   sockets     = coalesce(var.support_node_settings.sockets, var.default_node_settings.sockets)
   memory      = coalesce(var.support_node_settings.memory, var.default_node_settings.memory)
-  balloon     = coalesce(var.support_node_settings.balloon, var.default_node_settings.balloon)
   ciuser      = local.support_node_ciuser
   ipconfig0   = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${local.gw}"
   sshkeys     = coalesce(var.support_node_settings.authorized_keys, var.default_node_settings.authorized_keys)

@@ -28,7 +28,6 @@ resource "proxmox_vm_qemu" "k3s-master" {
   cores       = coalesce(var.master_node_settings.cores, var.default_node_settings.cores)
   sockets     = coalesce(var.master_node_settings.sockets, var.default_node_settings.sockets)
   memory      = coalesce(var.master_node_settings.memory, var.default_node_settings.memory)
-  balloon     = coalesce(var.master_node_settings.balloon, var.default_node_settings.balloon)
   ciuser      = local.master_node_ciuser
   ipconfig0   = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${local.gw}"
   sshkeys     = coalesce(var.master_node_settings.authorized_keys, var.default_node_settings.authorized_keys)
