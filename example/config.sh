@@ -3,8 +3,8 @@ KUBECONFIG=`mktemp`
 terraform output -raw kubeconfig > ${KUBECONFIG}
 
 KUBE_SERVER=`kubectl --kubeconfig ${KUBECONFIG} config view -o json --raw | jq -c -r '.clusters[0].cluster.server'`
-KUBE_CLUSTER="NEW-CLUSTER"
-KUBE_CONTEXT="NEW-CONTEXT"
+KUBE_CLUSTER=${1-"NEW-CLUSTER"}
+KUBE_CONTEXT=${2-"NEW-CONTEXT"}
 
 KUBE_CA_DATA=`kubectl --kubeconfig ${KUBECONFIG} config view -o json --raw | jq -c -r '.clusters[0].cluster."certificate-authority-data"'`
 CLIENT_CERT_DATA=`kubectl --kubeconfig ${KUBECONFIG} config view -o json --raw | jq -c -r '.users[0].user."client-certificate-data"'`
