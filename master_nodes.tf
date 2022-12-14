@@ -3,7 +3,8 @@ resource "macaddress" "k3s-masters" {
 }
 
 locals {
-  master_node_ips    = [for i in range(var.master_nodes_count) : cidrhost(var.control_plane_subnet, i + var.master_node_settings.ip_offset)]
+  master_node_subnet = coalesce(var.master_node_settings.subnet, var.default_node_settings.subnet)
+  master_node_ips    = [for i in range(var.master_nodes_count) : cidrhost(local.master_node_subnet, i + var.master_node_settings.ip_offset)]
   master_node_ciuser = coalesce(var.master_node_settings.ciuser, var.default_node_settings.ciuser)
 }
 
@@ -29,7 +30,7 @@ resource "proxmox_vm_qemu" "k3s-master" {
   sockets     = coalesce(var.master_node_settings.sockets, var.default_node_settings.sockets)
   memory      = coalesce(var.master_node_settings.memory, var.default_node_settings.memory)
   ciuser      = local.master_node_ciuser
-  ipconfig0   = "ip=${local.master_node_ips[count.index]}/${local.lan_subnet_cidr_bitnum},gw=${local.gw}"
+  ipconfig0   = "ip=${local.master_node_ips[count.index]}/${split("/", local.master_node_subnet)[1]},gw=${local.gw}"
   sshkeys     = coalesce(var.master_node_settings.authorized_keys, var.default_node_settings.authorized_keys)
   nameserver  = coalesce(var.master_node_settings.nameserver, var.default_node_settings.nameserver)
   os_type     = "cloud-init"

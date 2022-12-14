@@ -1,9 +1,9 @@
 resource "macaddress" "k3s-support" {}
 
 locals {
-  support_node_ip        = cidrhost(var.control_plane_subnet, var.support_node_settings.ip_offset)
+  support_node_subnet    = coalesce(var.support_node_settings.subnet, var.default_node_settings.subnet)
+  support_node_ip        = cidrhost(local.support_node_subnet, var.support_node_settings.ip_offset)
   gw                     = coalesce(var.support_node_settings.gw, var.default_node_settings.gw)
-  lan_subnet_cidr_bitnum = split("/", var.lan_subnet)[1]
   support_node_ciuser    = coalesce(var.support_node_settings.ciuser, var.default_node_settings.ciuser)
 }
 
@@ -17,7 +17,7 @@ resource "proxmox_vm_qemu" "k3s-support" {
   sockets     = coalesce(var.support_node_settings.sockets, var.default_node_settings.sockets)
   memory      = coalesce(var.support_node_settings.memory, var.default_node_settings.memory)
   ciuser      = local.support_node_ciuser
-  ipconfig0   = "ip=${local.support_node_ip}/${local.lan_subnet_cidr_bitnum},gw=${local.gw}"
+  ipconfig0   = "ip=${local.support_node_ip}/${split("/", local.support_node_subnet)[1]},gw=${local.gw}"
   sshkeys     = coalesce(var.support_node_settings.authorized_keys, var.default_node_settings.authorized_keys)
   nameserver  = coalesce(var.support_node_settings.nameserver, var.default_node_settings.nameserver)
   os_type     = "cloud-init"

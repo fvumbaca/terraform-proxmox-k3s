@@ -1,25 +1,3 @@
-variable "lan_subnet" {
-  description = <<EOF
-Subnet used by the LAN network. Note that only the bit count number at the end
-is acutally used, and all other subnets provided are secondary subnets.
-EOF
-  type        = string
-  validation {
-    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.lan_subnet))
-    error_message = "The lan_subnet value must be a valid cidr range."
-  }
-}
-
-variable "control_plane_subnet" {
-  description = <<EOF
-EOF
-  type        = string
-  validation {
-    condition     = can(regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]{1,2}$", var.control_plane_subnet))
-    error_message = "The control_plane_subnet value must be a valid cidr range."
-  }
-}
-
 variable "cluster_name" {
   default     = "k3s"
   type        = string
@@ -63,6 +41,7 @@ variable "support_node_settings" {
     full_clone      = optional(bool),
     gw              = optional(string),
     image_id        = optional(string),
+    subnet          = optional(string),
     ip_offset       = optional(number),
     memory          = optional(number),
     nameserver      = optional(string),

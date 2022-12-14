@@ -1,10 +1,9 @@
 module "k3s" {
-  #source  = "github.com/jan-tee/terraform-proxmox-k3s"
-  source = "../"
+  source  = "github.com/jan-tee/terraform-proxmox-k3s"
+  # source = "../"
   #version = ">= 0.0.0, < 1.0.0" # Get latest 0.X release
 
   cluster_name = var.cluster_name
-  lan_subnet   = var.lan_subnet
 
   # uncommment this if you want to enable a local registry with an untrusted
   # certificate with this URL - you can only do this before you create the
@@ -24,7 +23,6 @@ module "k3s" {
   master_nodes_count   = var.master_node_settings.count
   master_node_settings = var.master_node_settings
 
-  control_plane_subnet = var.control_plane_subnet
   node_pools           = var.node_pools
 }
 
