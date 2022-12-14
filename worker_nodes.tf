@@ -35,7 +35,6 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   for_each = local.mapped_worker_nodes
 
-
   #
   target_node = coalesce(each.value.target_node, var.default_node_settings.target_node)
   name        = "${var.cluster_name}-${each.key}"
