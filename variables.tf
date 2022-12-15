@@ -83,7 +83,8 @@ variable "master_node_settings" {
     storage_id      = optional(string),
     target_node     = optional(string),
     target_pool     = optional(string),
-    ciuser          = optional(string)
+    ciuser          = optional(string),
+    node_labels     = optional(list(string))
   })
 }
 
@@ -112,7 +113,8 @@ variable "node_pools" {
     storage_id      = optional(string),
     target_node     = optional(string),
     target_pool     = optional(string),
-    ciuser          = optional(string)
+    ciuser          = optional(string),
+    node_labels     = optional(list(string))
   }))
 }
 
