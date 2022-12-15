@@ -12,7 +12,8 @@ locals {
         },
           pool,
         {
-          subnet = coalesce(pool.subnet, var.default_node_settings.subnet)
+          subnet = coalesce(pool.subnet, var.default_node_settings.subnet),
+          node_labels = coalesce(pool.node_labels, [])
         })
     ]
   ])
