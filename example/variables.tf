@@ -32,7 +32,7 @@ variable "node_pools" {
     memory    = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
-    disk_size = optional(number),
+    disk_size = optional(string),
   }))
   description = "The definition of node pools to create"
 }
@@ -45,7 +45,7 @@ variable "master_node_settings" {
     memory    = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
-    disk_size = optional(number),
+    disk_size = optional(string),
   })
   description = "The definition of master nodes"
 }
@@ -57,17 +57,9 @@ variable "support_node_settings" {
     memory    = optional(number),
     cores     = optional(number),
     sockets   = optional(number),
-    disk_size = optional(number),
+    disk_size = optional(string),
   })
   description = "The definition of support node settings"
-}
-
-variable "lan_subnet" {
-  type = string
-}
-
-variable "control_plane_subnet" {
-  type = string
 }
 
 variable "cluster_name" {
@@ -78,4 +70,3 @@ variable "insecure_registries" {
   type    = list(string)
   default = []
 }
-
