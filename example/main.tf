@@ -2,12 +2,7 @@ terraform {
   required_providers {
     proxmox = {
       source = "Telmate/proxmox"
-      version = "2.9.3"
-    }
-
-    macaddress = {
-      source = "ivoronin/macaddress"
-      version = "0.3.0"
+      version = "2.9.14"
     }
   }
 }
@@ -26,12 +21,12 @@ provider proxmox {
 }
 
 module "k3s" {
-  source  = "fvumbaca/k3s/proxmox"
-  version = ">= 0.0.0, < 1" # Get latest 0.X release
+  source  = "../"
+  #version = ">= 0.0.0, < 1" # Get latest 0.X release
 
   authorized_keys_file = "authorized_keys"
 
-  proxmox_node = "my-proxmox-node"
+  proxmox_nodes = "my-proxmox-node"
 
   node_template = "ubuntu-template"
   proxmox_resource_pool = "my-k3s"
@@ -39,12 +34,7 @@ module "k3s" {
   network_gateway = "192.168.0.1"
   lan_subnet = "192.168.0.0/24"
 
-  support_node_settings = {
-    cores = 2
-    memory = 4096
-  }
 
-  master_nodes_count = 2
   master_node_settings = {
     cores = 2
     memory = 4096

@@ -1,46 +1,49 @@
-resource "macaddress" "k3s-workers" {
-  for_each = local.mapped_worker_nodes
-}
-
 locals {
 
-  listed_worker_nodes = flatten([
+/*   listed_worker_nodes = flatten([
     for pool in var.node_pools :
     [
-      for i in range(pool.size) :
-      merge(defaults(pool, {
-        cores          = 2
-        sockets        = 1
-        memory         = 4096
-        storage_type   = "scsi"
-        storage_id     = "local-lvm"
-        disk_size      = "20G"
-        user           = "k3s"
-        template       = var.node_template
-        network_bridge = "vmbr0"
-        network_tag    = -1
-        }), {
-        i  = i
-        ip = cidrhost(pool.subnet, i)
-      })
+      for zone in pool.zones : [
+        for i in range(pool.size) :
+        merge(pool, {
+          zone     = zone
+          template = var.node_template
+          i        = i
+          ip       = cidrhost(pool.subnet, index(pool.zones, zone)+1)
+        })
+      ]
+    ]
+  ]) */
+
+  listed_worker_nodes = flatten([
+    for pool in var.node_pools : [
+      for index, node in setproduct([pool], pool.zones) : [
+        merge(node[0], {
+          zone = node[1]
+          ip = cidrhost(pool.subnet, index+1)
+          i  = index
+        })
+      ]
     ]
   ])
 
   mapped_worker_nodes = {
-    for node in local.listed_worker_nodes : "${node.name}-${node.i}" => node
+    for node in local.listed_worker_nodes : "${node.name}-${node.zone}-${node.i}" => node
   }
 
 }
 
+output "test" {
+  value = local.listed_worker_nodes
+}
+
 resource "proxmox_vm_qemu" "k3s-worker" {
-  depends_on = [
-    proxmox_vm_qemu.k3s-support,
-    proxmox_vm_qemu.k3s-master,
-  ]
 
   for_each = local.mapped_worker_nodes
 
-  target_node = var.proxmox_node
+  onboot = each.value.onboot
+
+  target_node = each.value.zone
   name        = "${var.cluster_name}-${each.key}"
 
   clone = each.value.template
@@ -54,17 +57,19 @@ resource "proxmox_vm_qemu" "k3s-worker" {
 
   agent = 1
 
+  scsihw = "virtio-scsi-single"
+
   disk {
-    type    = each.value.storage_type
-    storage = each.value.storage_id
-    size    = each.value.disk_size
+    type     = each.value.storage_type
+    storage  = each.value.storage_id
+    size     = each.value.disk_size
+    iothread = each.value.iothread
   }
 
   network {
     bridge    = each.value.network_bridge
     firewall  = true
     link_down = false
-    macaddr   = upper(macaddress.k3s-workers[each.key].address)
     model     = "virtio"
     queues    = 0
     rate      = 0
@@ -89,27 +94,5 @@ resource "proxmox_vm_qemu" "k3s-worker" {
   sshkeys = file(var.authorized_keys_file)
 
   nameserver = var.nameserver
-
-  connection {
-    type = "ssh"
-    user = each.value.user
-    host = each.value.ip
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      templatefile("${path.module}/scripts/install-k3s-server.sh.tftpl", {
-        mode         = "agent"
-        tokens       = [random_password.k3s-server-token.result]
-        alt_names    = []
-        disable      = []
-        server_hosts = ["https://${local.support_node_ip}:6443"]
-        node_taints  = each.value.taints
-        datastores   = []
-
-        http_proxy  = var.http_proxy
-      })
-    ]
-  }
 
 }

@@ -1,6 +1,6 @@
-variable "proxmox_node" {
-  description = "Proxmox node to create VMs on."
-  type        = string
+variable "proxmox_nodes" {
+  description = "Proxmox nodes to create VMs on."
+  type        = list(string)
 }
 
 variable "authorized_keys_file" {
@@ -60,64 +60,45 @@ variable "proxmox_resource_pool" {
   default     = ""
 }
 
-variable "support_node_settings" {
-  type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
-    user           = optional(string),
-    db_name        = optional(string),
-    db_user        = optional(string),
-    network_bridge = optional(string),
-    network_tag    = optional(number), 
-  })
-}
-
-variable "master_nodes_count" {
-  description = "Number of master nodes."
-  default     = 2
-  type        = number
-}
-
 variable "master_node_settings" {
   type = object({
-    cores          = optional(number),
-    sockets        = optional(number),
-    memory         = optional(number),
-    storage_type   = optional(string),
-    storage_id     = optional(string),
-    disk_size      = optional(string),
-    user           = optional(string),
-    network_bridge = optional(string),
-    network_tag    = optional(number),
+    cores          = optional(number, 2),
+    sockets        = optional(number, 1),
+    memory         = optional(number, 4096),
+    onboot       = optional(bool, true)
+    storage_type   = optional(string, "scsi"),
+    storage_id     = optional(string, "local-lvm"),
+    disk_size      = optional(string, "20G"),
+    user           = optional(string, "k3s"),
+    network_bridge = optional(string, "vmbr0"),
+    network_tag    = optional(number, -1),
+    iothread       = optional(number, 0)
   })
 }
 
 variable "node_pools" {
   description = "Node pool definitions for the cluster."
   type = list(object({
-
+    zones  = list(string),
     name   = string,
     size   = number,
     subnet = string,
+    template = string,
 
     taints = optional(list(string)),
 
-    cores        = optional(number),
-    sockets      = optional(number),
-    memory       = optional(number),
-    storage_type = optional(string),
-    storage_id   = optional(string),
-    disk_size    = optional(string),
-    user         = optional(string),
-    network_tag  = optional(number),
+    cores        = optional(number, 2),
+    sockets      = optional(number, 1),
+    memory       = optional(number, 4096),
+    onboot       = optional(bool, true)
+    storage_type = optional(string, "scsi"),
+    storage_id   = optional(string, "local-lvm"),
+    disk_size    = optional(string, "20G"),
+    iothread     = optional(number, 0)
+    user         = optional(string, "k3s"),
+    network_tag  = optional(number, -1),
 
-    template = optional(string),
-
-    network_bridge = optional(string),
+    network_bridge = optional(string, "vmbr0"),
   }))
 }
 variable "api_hostnames" {
