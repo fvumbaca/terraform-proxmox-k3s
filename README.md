@@ -30,7 +30,7 @@ module "k3s" {
 
   authorized_keys_file = "authorized_keys"
 
-  proxmox_node = "my-proxmox-node"
+  proxmox_nodes = "my-proxmox-node"
 
   node_template = "ubuntu-template"
   proxmox_resource_pool = "my-k3s"
@@ -49,7 +49,6 @@ module "k3s" {
     "servicelb"
   ]
 
-  master_nodes_count = 2
   master_node_settings = {
     cores = 2
     memory = 4096
