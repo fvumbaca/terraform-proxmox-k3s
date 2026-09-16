@@ -1,0 +1,8 @@
+# Shell scripts and rendered templates MUST be LF: they run under dash/bash on the
+# Linux guests. CRLF breaks `for ... do` parsing (exit 2) and corrupts filenames.
+*.tftpl text eol=lf
+*.sh    text eol=lf
+
+# GitOps manifests: keep LF for clean diffs and kubectl/flux apply consistency.
+*.yaml  text eol=lf
+*.yml   text eol=lf

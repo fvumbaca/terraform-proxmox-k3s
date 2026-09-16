@@ -1,0 +1,62 @@
+#!/bin/bash
+# Installs open-iscsi so Longhorn (or any iSCSI-based CSI) can attach volumes.
+# Rendered as a no-op when iscsi_enabled is false.
+
+export HTTP_PROXY="${http_proxy}"
+export HTTPS_PROXY="${http_proxy}"
+export http_proxy="${http_proxy}"
+export https_proxy="${http_proxy}"
+export NO_PROXY="${join(",", no_proxy)}"
+export no_proxy="${join(",", no_proxy)}"
+
+# Ensure a sane PATH: the SSH non-login shell may not include /usr/sbin, where
+# iscsiadm and other admin binaries live.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+%{ if iscsi_enabled ~}
+# Stop Debian's first-boot apt activity so it doesn't hold the apt/dpkg lock.
+sudo systemctl stop unattended-upgrades apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+sudo systemctl mask unattended-upgrades apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+for _lockwait in $(seq 1 90); do
+    if ! sudo fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1; then
+        break
+    fi
+    sleep 5
+done
+[ -f /etc/needrestart/needrestart.conf ] && sudo sed -i 's/#$nrconf{restart} = '"'"'i'"'"';/$nrconf{restart} = '"'"'a'"'"';/g' /etc/needrestart/needrestart.conf || true
+
+# Retry update+install to survive transient mirror/network failures.
+_apt_attempt=0
+until DEBIAN_FRONTEND=noninteractive sudo -E apt-get update -y &&
+      DEBIAN_FRONTEND=noninteractive sudo -E apt-get install -y open-iscsi; do
+    _apt_attempt=$((_apt_attempt + 1))
+    if [ "$_apt_attempt" -ge 5 ]; then
+        echo "ERROR: failed to install open-iscsi after $${_apt_attempt} attempts" >&2
+        exit 1
+    fi
+    echo "apt attempt $${_apt_attempt} failed; retrying in 10s..." >&2
+    sleep 10
+done
+
+# Enable and start the iSCSI initiator daemon.
+sudo systemctl enable --now iscsid
+
+# Load the TCP transport module Longhorn needs, and persist it across reboots.
+sudo modprobe iscsi_tcp || true
+echo "iscsi_tcp" | sudo tee /etc/modules-load.d/longhorn-iscsi.conf >/dev/null
+
+# Verify the initiator is actually usable before declaring success.
+if ! command -v iscsiadm >/dev/null 2>&1; then
+    echo "ERROR: apt reported success but iscsiadm is missing" >&2
+    exit 1
+fi
+if ! systemctl is-active --quiet iscsid; then
+    echo "ERROR: iscsid is not active after install" >&2
+    sudo journalctl -u iscsid --no-pager -n 20 >&2
+    exit 1
+fi
+
+echo "\e[1;33;4;44mopen-iscsi installed and verified (Longhorn prerequisite).\e[0m"
+%{ else ~}
+echo "Longhorn/iSCSI disabled; nothing to do."
+%{ endif ~}

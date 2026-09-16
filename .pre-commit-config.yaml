@@ -1,0 +1,21 @@
+repos:
+  - repo: https://github.com/terraform-docs/terraform-docs
+    rev: v0.18.0
+    hooks:
+      - id: terraform-docs-go
+        args: ["markdown", "table", "--output-file", "README.md", "--output-method", "inject", "."]
+
+  - repo: https://github.com/terraform-linters/tflint
+    rev: v0.50.3
+    hooks:
+      - id: tflint
+        args: ["--init"]
+      - id: tflint
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+        files: \.(tf|tfpl|md|ya?ml)$
+      - id: trailing-whitespace
+        files: \.(tf|tfpl|md|ya?ml)$

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Init root module
+        run: terraform init -backend=false -input=false
+
+      - name: Validate root module
+        run: terraform validate
+
+      - name: Init example
+        run: terraform -chdir=example init -backend=false -input=false
+
+      - name: Validate example
+        run: terraform -chdir=example validate
+
+      - name: Run tests
+        run: terraform test
+
+      - name: tflint init
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_wrapper: true
+
+      - name: tflint
+        run: |
+          tflint --init
+          tflint --recursive --format compact
+
+      - name: terraform-docs check
+        uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: .
+          output-file: README.md
+          output-method: inject
+          recursive: false
+
+      - name: Fail if docs drifted
+        run: git diff --exit-code README.md

@@ -1,0 +1,18 @@
+# Flux Kustomization: applications. Depends on infra so MetalLB is ready to hand
+# out LoadBalancer IPs before apps roll out.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 10m
+  path: ./apps
+  prune: true
+  dependsOn:
+    - name: infra-config
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

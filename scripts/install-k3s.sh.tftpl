@@ -1,0 +1,135 @@
+export HTTP_PROXY="${http_proxy}"
+export HTTPS_PROXY="${http_proxy}"
+export http_proxy="${http_proxy}"
+export https_proxy="${http_proxy}"
+export NO_PROXY="${join(",", no_proxy)}"
+export no_proxy="${join(",", no_proxy)}"
+
+setup_extra_storage() {
+    sudo mkdir -p /mnt/sdb1 &&
+    sudo wipefs -a /dev/sdb &&
+    sudo parted -s /dev/sdb mklabel gpt &&
+    sudo parted -s /dev/sdb mkpart primary ext4 0% 100% && 
+    yes | sudo mkfs.ext4 /dev/sdb1 &&
+    echo "/dev/sdb1 /mnt/sdb1 ext4 defaults 0 0" | sudo tee -a /etc/fstab &&
+    sudo mount -a &&
+    sleep 5
+}
+
+%{ if extra_storage_enable == true ~}
+setup_extra_storage
+%{ endif ~}
+
+# Debian's first-boot unattended-upgrades + apt timers hold the apt/dpkg lock,
+# which breaks the guest-agent install and the k3s installer's apt calls.
+# Stop and mask them, then wait for any in-progress operation to release the locks.
+sudo systemctl stop unattended-upgrades apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+sudo systemctl mask unattended-upgrades apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+for _lockwait in $(seq 1 90); do
+    if ! sudo fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1; then
+        break
+    fi
+    sleep 5
+done
+
+install_guest_agent() {
+    DEBIAN_FRONTEND=noninteractive sudo -E apt-get update -y &&
+    DEBIAN_FRONTEND=noninteractive sudo -E apt-get install -y qemu-guest-agent &&
+    sudo systemctl enable --now qemu-guest-agent
+}
+
+install_guest_agent
+
+%{ if length(server_hosts) > 0 ~}
+# Wait for the join target's API to answer before installing, instead of a
+# fixed sleep, so slow hosts don't fail to join.
+wait_for_api() {
+    target="$1"
+    i=0
+    until curl -sk --max-time 5 "$${target}/healthz" >/dev/null 2>&1; do
+        i=$((i + 1))
+        if [ "$i" -ge 120 ]; then
+            echo "Timed out waiting for $${target} to become healthy" >&2
+            exit 1
+        fi
+        sleep 5
+    done
+}
+
+wait_for_api "${server_hosts[0]}"
+%{ endif ~}
+
+%{ if k3s_version != "" ~}
+export INSTALL_K3S_VERSION="${k3s_version}"
+%{ endif ~}
+%{ if k3s_install_commit != "" ~}
+export INSTALL_K3S_COMMIT="${k3s_install_commit}"
+%{ endif ~}
+# Download the installer to a file with retries and a completeness check.
+# A bare `curl | sh` silently no-ops (exit 0) on an empty download and dies
+# with a syntax error (exit 2) on a truncated one - both seen when the
+# mirror stalls mid-transfer. Retry until we get a complete script.
+INSTALL_SCRIPT="/tmp/k3s-install-$$.sh"
+_k3s_dl_ok=0
+for _attempt in 1 2 3 4 5; do
+    if curl -fsSL --retry 3 --retry-all-errors --max-time 180 https://get.k3s.io -o "$INSTALL_SCRIPT" && [ -s "$INSTALL_SCRIPT" ] && tail -n 1 "$INSTALL_SCRIPT" | grep -q '}'; then
+        _k3s_dl_ok=1
+        break
+    fi
+    sleep 5
+done
+if [ "$_k3s_dl_ok" -ne 1 ]; then
+    echo "Failed to download a complete k3s installer after 5 attempts" >&2
+    exit 1
+fi
+# Run the installer with retries. Under concurrent provisioning the k3s binary
+# download from GitHub can be truncated, failing the installer's checksum and
+# exiting non-zero (observed as exit 2). A retry re-downloads and usually
+# succeeds once the momentary contention clears.
+_k3s_install_ok=0
+for _try in 1 2 3; do
+    if sudo -E sh "$INSTALL_SCRIPT" ${mode} \
+%{ for component in disable ~}
+    --disable ${component} \
+%{ endfor ~}
+%{ for host in server_hosts ~}
+    --server "${host}" \
+%{ endfor ~}
+%{ for alt in alt_names ~}
+    --tls-san "${alt}" \
+%{ endfor ~}
+%{ for token in tokens ~}
+    --token "${token}" \
+%{ endfor ~}
+%{ for taint in node_taints ~}
+    --node-taint "${ taint }" \
+%{ endfor ~}
+%{ for label in node_labels ~}
+    --node-label "${label}" \
+%{ endfor ~}
+%{ for db in datastores ~}
+    --datastore-endpoint="mysql://${db.user}:${db.password}@tcp(${db.host})/${db.name}" \
+%{ endfor ~}
+%{ if embedded_etcd_init == true ~}
+    --cluster-init \
+%{ endif ~}
+%{ if mode == "server" && cluster_cidr != "" ~}
+    --cluster-cidr "${cluster_cidr}" \
+%{ endif ~}
+%{ if mode == "server" && service_cidr != "" ~}
+    --service-cidr "${service_cidr}" \
+%{ endif ~}
+%{ for arg in extra_args ~}
+    ${arg} \
+%{ endfor ~}
+    --log $HOME/.k3s-install-log.txt > /tmp/k3s-install-out.log 2>&1; then
+        _k3s_install_ok=1
+        break
+    fi
+    echo "k3s install attempt $${_try} failed (often a truncated binary download under concurrent load); retrying in 15s..." >&2
+    sleep 15
+done
+if [ "$_k3s_install_ok" -ne 1 ]; then
+    echo "k3s install failed after 3 attempts" >&2
+    exit 1
+fi

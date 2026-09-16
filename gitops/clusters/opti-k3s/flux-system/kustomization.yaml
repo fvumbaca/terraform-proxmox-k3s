@@ -1,0 +1,9 @@
+# Plain kustomize overlay for the flux-system directory. Lists the sync objects
+# and the Flux Kustomization CRs that pull in infrastructure and apps.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gotk-sync.yaml
+  - infra-controllers.yaml
+  - infra-config.yaml
+  - apps.yaml

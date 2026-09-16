@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metallb
+  namespace: ${namespace}
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: metallb
+      version: "${chart_version}"
+      sourceRef:
+        kind: HelmRepository
+        name: metallb
+        namespace: ${namespace}
+      interval: 1h
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
+  values:
+    controller:
+      replicas: ${controller_replicas}

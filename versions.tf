@@ -1,19 +1,18 @@
 terraform {
+  required_version = ">= 1.9.0"
+
   required_providers {
     proxmox = {
-      source  = "Telmate/proxmox"
-      version = "2.9.3"
+      source  = "bpg/proxmox"
+      version = "~> 0.113.0"
     }
-
-    macaddress = {
-      source  = "ivoronin/macaddress"
-      version = "0.3.0"
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.1.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3.2.0"
     }
   }
-
-  experiments = [module_variable_optional_attrs]
-}
-
-locals {
-  authorized_keyfile = "authorized_keys"
 }

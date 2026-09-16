@@ -1,3 +1,11 @@
+# Local secrets (Proxmox API token, etc.) - never commit
+secrets.auto.tfvars
+**/secrets.auto.tfvars
+
+# Backend credentials (Backblaze B2 / S3) - never commit. backend.hcl.example is the template.
+backend.hcl
+**/backend.hcl
+
 # Local .terraform directories
 **/.terraform/*
 
@@ -7,6 +15,10 @@
 
 # Crash log files
 crash.log
+
+# Generated kubeconfig written by the module at apply time (contains credentials)
+kubeconfig.yaml
+kubeconfig*.yaml
 
 # Ignore any .tfvars files that are generated automatically for each Terraform run. Most
 # .tfvars files are managed as part of configuration and so should be included in

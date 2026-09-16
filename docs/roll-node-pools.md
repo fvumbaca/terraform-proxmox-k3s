@@ -5,20 +5,48 @@
 ```terraform
 // ....
     // This is the old node pool:
-    {
-      name = "original"
-      size = 2
-      subnet = "192.168.0.208/28" # 14 ips
-    },
-    // Add the new updated nodepool like below:
-    {
-      name = "new-pool"
-      size = 2
-      subnet = "192.168.0.224/28" # 14 ips
-      // You probably want to set this to change the template from the old one
-      // that is being used on the original node pool.
-      template = "new-proxmox-node-template"
-    },
+    node_pools = [
+        {
+        # 10.0.6.1 - 10.0.6.6	 (6 available IPs for nodes)
+        subnet = "10.0.6.8/29"
+
+        target_node = "titan"
+        size = 2
+        node_pool_settings = {
+          name           = "pool0",
+          taints         = [""]
+          cores          = 2
+          sockets        = 1
+          memory         = 8192
+          storage_type   = "scsi"
+          storage_id     = "nytesolutions-fast-store"
+          disk_size      = "20G"
+          user           = "k3s"
+          network_bridge = "vmbr0"
+          network_tag    = -1
+        }
+        },
+        // This is the new node pool:
+        {
+        # 10.0.6.16 - 10.0.6.23 (6 available IPs for nodes)
+        subnet = "10.0.6.16/29"
+
+        target_node = "titan"
+        size = 2
+        node_pool_settings = {
+          name           = "pool1",
+          taints         = [""]
+          cores          = 2
+          sockets        = 1
+          memory         = 8192
+          storage_type   = "scsi"
+          storage_id     = "nytesolutions-fast-store"
+          disk_size      = "20G"
+          user           = "k3s"
+          network_bridge = "vmbr0"
+          network_tag    = -1
+        }
+        }
 // ...
 ```
 

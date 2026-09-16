@@ -1,0 +1,11 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: ${pool_name}
+  namespace: ${namespace}
+spec:
+  autoAssign: ${auto_assign}
+  addresses:
+%{ for addr in pool_addresses ~}
+    - ${addr}
+%{ endfor ~}

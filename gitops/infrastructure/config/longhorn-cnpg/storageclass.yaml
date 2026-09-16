@@ -1,0 +1,25 @@
+# Longhorn StorageClass tuned for CloudNativePG (CNPG).
+#
+# CNPG performs its own high availability via Postgres streaming replication
+# between pods, so it does NOT want Longhorn replicating each volume underneath
+# (that would be double replication). Hence numberOfReplicas: "1".
+#
+# volumeBindingMode: WaitForFirstConsumer is REQUIRED for CNPG so the volume is
+# provisioned on the node where the instance pod is actually scheduled (avoids
+# cross-node volume attachment and lets CNPG's scheduling/topology hints work).
+#
+# reclaimPolicy: Retain so a deleted PVC never silently destroys database data.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-cnpg
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "2880"
+  fromBackup: ""
+  # Keep default locality; CNPG pins the pod to the volume's node via WaitForFirstConsumer.
+  dataLocality: disabled

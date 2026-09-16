@@ -1,0 +1,30 @@
+# Managed by Terraform - do not edit by hand.
+# VIP floats across masters only; each master serves the K3s API directly on
+# :6443, so no proxy is needed.
+#
+# `nopreempt` (with every node in state BACKUP) means a node that regains health
+# does NOT immediately grab the VIP back. This avoids a second failover flap every
+# time a master restarts; the VIP only moves again on the next real failure.
+#
+# NOTE: the k3s health-check vrrp_script is intentionally omitted. On Debian 13
+# (trixie) + kernel 6.12, keepalived 2.3.x's VRRP child crashes when a tracked
+# script is configured (netlink attribute dump + respawn loop). The VIP still
+# fails over on node failure via VRRP advertisement timeout; it just does not
+# move on a k3s-only failure.
+vrrp_instance K3S_API {
+    state BACKUP
+    nopreempt
+    interface ${interface}
+    virtual_router_id ${router_id}
+    priority ${priority}
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass ${auth_pass}
+    }
+
+    virtual_ipaddress {
+        ${vip}/32 dev ${interface}
+    }
+}

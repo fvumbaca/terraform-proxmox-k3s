@@ -9,32 +9,60 @@ export HTTP_PROXY="${http_proxy}"
 export HTTPS_PROXY="${http_proxy}"
 export http_proxy="${http_proxy}"
 export https_proxy="${http_proxy}"
+export NO_PROXY="${join(",", no_proxy)}"
+export no_proxy="${join(",", no_proxy)}"
 
 mariadb() {
-    sudo -E apt install mariadb-server -y
-
-    # Make mariadb listen to all remote requests
-    sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\10.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
-
-    # Replicate mysql_secure_installation script
-    sudo mariadb -e "UPDATE mysql.user SET Password=PASSWORD('$MARIADB_ROOT_PASSWORD') WHERE User='root'"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User=''"
-    sudo mariadb -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
-    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'"
-
-    # Setup db and user for k3s
-    sudo mariadb -e "CREATE DATABASE IF NOT EXISTS $MARIADB_K3S_DATABASE"
-    sudo mariadb -e "CREATE USER IF NOT EXISTS $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'"
-    sudo mariadb -e "GRANT ALL ON $MARIADB_K3S_DATABASE.* to $MARIADB_K3S_USER IDENTIFIED BY '$MARIADB_K3S_PASSWORD'"
-
-    # Flush and restart db
-    sudo mysql -e "FLUSH PRIVILEGES"
-    sudo systemctl restart mariadb
+    echo "\e[1;33;4;44mProvisioning delay to ensure VM is online.\e[0m" || exit 1 
+    sleep 10 &&
+    DEBIAN_FRONTEND=noninteractive sudo -E apt-get install mariadb-server -y &&
+    # Bind to the control-plane IP only (not 0.0.0.0) so the datastore is only
+    # reachable from the control-plane subnet.
+    sudo sed -i -e 's/\(bind-address\s*=\s*\)[0-9.]*/\1${bind_address}/g' /etc/mysql/mariadb.conf.d/50-server.cnf &&
+    sudo systemctl restart mariadb &&
+    # root: keep unix_socket (so local sudo keeps working) AND add password auth.
+    # ALTER USER is the version-safe path on MariaDB 10.4+ / 11.x (the old
+    # "UPDATE mysql.user SET Password=..." relies on a legacy column).
+    sudo mariadb -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket OR mysql_native_password USING PASSWORD('$MARIADB_ROOT_PASSWORD')" &&
+    sudo mariadb -e "DELETE FROM mysql.user WHERE User=''" &&
+    sudo mariadb -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')" &&
+    sudo mariadb -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'" &&
+    echo "\e[1;33;4;44mDatabase configured.\e[0m" &&
+    # Setup db and user for k3s (explicit '%' host so control-plane nodes can connect)
+    sudo mariadb -e "CREATE DATABASE IF NOT EXISTS $MARIADB_K3S_DATABASE" &&
+    sudo mariadb -e "CREATE USER IF NOT EXISTS '$MARIADB_K3S_USER'@'%' IDENTIFIED BY '$MARIADB_K3S_PASSWORD'" &&
+    sudo mariadb -e "GRANT ALL ON $MARIADB_K3S_DATABASE.* TO '$MARIADB_K3S_USER'@'%'" &&
+    echo "\e[1;33;4;44mDatabase configured for k3s.\e[0m" &&
+    sudo mariadb -e "FLUSH PRIVILEGES" &&
+    echo "\e[1;33;4;44mPrivileges flushed.\e[0m"
 }
 
-nginx() {
-    sudo -E apt install nginx -y
+%{ if db_backup_enabled ~}
+db_backup() {
+    sudo tee /usr/local/bin/k3s-db-backup.sh > /dev/null <<'BACKUP_EOF'
+#!/bin/bash
+set -euo pipefail
+BACKUP_DIR="/var/backups/k3s"
+mkdir -p "$BACKUP_DIR"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+sudo mariadb-dump --single-transaction --routines --triggers "${k3s_database}" | gzip > "$BACKUP_DIR/k3s-$TIMESTAMP.sql.gz"
+# Rotate: keep last 7 days
+find "$BACKUP_DIR" -name 'k3s-*.sql.gz' -mtime +7 -delete
+BACKUP_EOF
+    sudo chmod 700 /usr/local/bin/k3s-db-backup.sh &&
+    echo "${db_backup_schedule} root /usr/local/bin/k3s-db-backup.sh >> /var/log/k3s-db-backup.log 2>&1" | sudo tee /etc/cron.d/k3s-db-backup > /dev/null &&
+    echo "\e[1;33;4;44mDB backup cron installed.\e[0m"
 }
+%{ endif ~}
 
-mariadb
-nginx
+[ -f /etc/needrestart/needrestart.conf ] && sudo sed -i 's/#$nrconf{restart} = '"'"'i'"'"';/$nrconf{restart} = '"'"'a'"'"';/g' /etc/needrestart/needrestart.conf || true
+sleep 10 &&
+DEBIAN_FRONTEND=noninteractive sudo -E apt-get update -y &&
+DEBIAN_FRONTEND=noninteractive sudo -E apt-get install -y qemu-guest-agent &&
+sudo systemctl enable --now qemu-guest-agent &&
+%{ if embedded_etcd_init != true ~}
+mariadb &&
+%{ endif ~}
+%{ if db_backup_enabled ~}
+db_backup
+%{ endif ~}

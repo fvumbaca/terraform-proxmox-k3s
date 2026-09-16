@@ -1,0 +1,8 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: metallb
+  namespace: ${namespace}
+spec:
+  interval: 1h
+  url: ${helm_repo_url}

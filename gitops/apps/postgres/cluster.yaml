@@ -1,0 +1,34 @@
+# CloudNativePG example cluster on the longhorn-cnpg StorageClass.
+#
+# Wired into gitops/apps/kustomization.yaml as a LIVE example — Flux deploys it
+# on bootstrap. The bootstrap secret is generated there via a kustomize
+# secretGenerator with a PLACEHOLDER password; replace it with a SOPS/Sealed-Secret
+# value before real use.
+#
+# Design: 2 instances = 1 primary + 1 streaming replica. Each instance's data
+# volume is single-replica (longhorn-cnpg); HA comes from CNPG's Postgres
+# streaming replication, NOT Longhorn replication. reclaimPolicy=Retain means
+# deleting the Cluster keeps the volumes until you purge them manually:
+#   kubectl -n postgres delete cluster pg-sample
+#   kubectl delete pv <retained-pvs>
+#   kubectl -n longhorn-system delete volume <orphaned-volumes>
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-sample
+  namespace: postgres
+spec:
+  instances: 2
+  storage:
+    storageClass: longhorn-cnpg
+    size: 1Gi
+  bootstrap:
+    initdb:
+      database: appdb
+      owner: appuser
+      secret:
+        name: pg-sample-app
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi

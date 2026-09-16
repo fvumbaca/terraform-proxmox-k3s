@@ -1,0 +1,20 @@
+# Backblaze B2 credentials for the Terraform S3 backend.
+#
+# Copy this file to `backend.hcl` (gitignored) and fill in your B2 keys:
+#   copy backend.hcl.example backend.hcl   (Windows)
+#   cp backend.hcl.example backend.hcl    (Unix)
+#
+# Then initialize/migrate:
+#   terraform init -migrate-state -backend-config=backend.hcl
+#
+# access_key = B2 "keyID" (Application Key ID)
+# secret_key = B2 "applicationKey" (Application Key)
+# Create them in the B2 console under App Keys; scope the key to the state bucket.
+
+access_key = "YOUR_B2_KEY_ID"
+secret_key = "YOUR_B2_APPLICATION_KEY"
+
+# Override bucket/endpoint here instead of main.tf if you prefer to keep ALL
+# backend config out of the repo (uncomment as needed):
+# bucket   = "YOUR-B2-BUCKET"
+# endpoint = "https://s3.us-west-004.backblazeb2.com"

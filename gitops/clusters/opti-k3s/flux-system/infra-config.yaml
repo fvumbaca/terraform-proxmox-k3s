@@ -1,0 +1,19 @@
+# Flux Kustomization: infrastructure config (MetalLB pool + advertisement).
+# Depends on the controllers so the CRDs exist before the pool is applied.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-config
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 2m
+  timeout: 5m
+  path: ./infrastructure/config
+  prune: true
+  wait: true
+  dependsOn:
+    - name: infra-controllers
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
