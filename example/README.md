@@ -13,7 +13,7 @@ This will spin up:
 
 - 1 master node (`8 cores / 16 GiB`, 48G on `local-lvm`) running the embedded-etcd control plane. It is tainted (`CriticalAddonsOnly:NoExecute`), so only critical system pods schedule there.
 - 4 general-purpose workers (`4 cores / 24 GiB`, 64G on `fast-local`), one per pool `pool2`..`pool5`.
-- 1 dedicated CNPG database worker (`8 cores / 64 GiB`, 100G boot + 300G Longhorn data disk on `fast-local`), in pool `db`. It is labeled `workload=cnpg` and tainted `dedicated=db:NoSchedule` so only CloudNativePG pods land there.
+- 1 dedicated CNPG database worker (`8 cores / 64 GiB`, 100G boot + 300G CNPG data disk on `fast-local`), in pool `db`. It is labeled `workload=cnpg` and tainted `dedicated=db:NoSchedule` so only CloudNativePG pods land there.
 - The support VM is disabled (`support_node_enabled = false`) because embedded etcd removes the MariaDB dependency.
 
 Total: 32 vCPUs / 176 GiB RAM / ~672 GiB `fast-local` + 48 GiB `local-lvm`,

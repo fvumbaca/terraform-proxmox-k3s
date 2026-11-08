@@ -1,4 +1,4 @@
-# CloudNativePG example cluster on the longhorn-cnpg StorageClass.
+# CloudNativePG example cluster on the k3s local-path StorageClass.
 #
 # Wired into gitops/apps/kustomization.yaml as a LIVE example — Flux deploys it
 # on bootstrap. The bootstrap secret is generated there via a kustomize
@@ -6,12 +6,10 @@
 # value before real use.
 #
 # Design: a single instance on the dedicated DB node. HA across DB nodes is not
-# a priority here, so CNPG streaming replication is not used. The data volume is
-# single-replica (longhorn-cnpg); reclaimPolicy=Retain means deleting the
-# Cluster keeps the volume until you purge it manually:
-#   kubectl -n postgres delete cluster pg-sample
-#   kubectl delete pv <retained-pvs>
-#   kubectl -n longhorn-system delete volume <orphaned-volumes>
+# a priority here, so CNPG streaming replication is not used. The data volume
+# uses the k3s local-path provisioner (no Longhorn on a single node). The DB
+# node has a 300G data disk at /mnt/sdb1; patch local-path-config so that node's
+# path is /mnt/sdb1 if you want CNPG data there instead of the boot disk.
 #
 # Scheduling: pinned to the dedicated "db" node pool created by the Terraform
 # module (node labeled workload=cnpg, tainted dedicated=db:NoSchedule).
@@ -32,7 +30,7 @@ spec:
         value: db
         effect: NoSchedule
   storage:
-    storageClass: longhorn-cnpg
+    storageClass: local-path
     size: 1Gi
   bootstrap:
     initdb:

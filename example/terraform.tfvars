@@ -100,12 +100,11 @@ node_pools = [
     # HA across DB nodes is not a priority. The taint keeps non-DB workloads
     # off this node; CNPG pins its instance here via nodeSelector/tolerations
     # (see gitops/apps/postgres/cluster.yaml). The node gets a 100G boot disk
-    # plus a 300G data disk mounted at /mnt/sdb1 for Longhorn.
+    # plus a 300G data disk mounted at /mnt/sdb1 for CNPG data.
     #
-    # IMPORTANT: Longhorn's longhorn-manager DaemonSet must tolerate
-    # dedicated=db:NoSchedule on this node (add the toleration to the Longhorn
-    # Helm values) and use /mnt/sdb1 as its data path. Without the toleration,
-    # Longhorn cannot run here and CNPG volumes cannot be provisioned.
+    # CNPG uses the k3s local-path provisioner. By default that writes to
+    # /var/lib/rancher/k3s/storage on the boot disk; to use the 300G data disk,
+    # patch local-path-config (kube-system) so this node's path is /mnt/sdb1.
     subnet      = "10.0.6.64/29" # db .65
     target_node = "lagrange"
     size        = 1

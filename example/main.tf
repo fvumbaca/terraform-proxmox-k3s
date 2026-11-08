@@ -92,7 +92,7 @@ provider "proxmox" {
 # VM layout (32 vCPUs / 176 GiB RAM / ~672 GiB fast-local + 48 GiB local-lvm):
 #   master0   : 8c/16G, 48G on local-lvm   (control-plane only)
 #   pool2-5   : 4c/24G, 64G on fast-local  (general workloads)
-#   db0       : 8c/64G, 100G boot + 300G Longhorn data disk on fast-local (CNPG)
+#   db0       : 8c/64G, 100G boot + 300G CNPG data disk on fast-local
 #
 # One master runs the whole control plane. The Proxmox host is itself a single
 # point of failure, so extra master VMs would not add real HA. The master is
@@ -110,8 +110,10 @@ module "k3s" {
   authorized_private_key_file = "~/.ssh/id_ed25519"
   ssh_binary                  = "/usr/bin/ssh"
 
-  # Install open-iscsi on all nodes so Longhorn can attach volumes.
-  longhorn_enabled       = true
+  # Longhorn is disabled: this is a single-node layout, so distributed storage
+  # adds overhead without real replication. CNPG uses the k3s local-path
+  # provisioner instead.
+  longhorn_enabled       = false
   scp_binary             = "/usr/bin/scp"
   ssh_null_device        = "/dev/null"
   kubeconfig_interpreter = ["/bin/sh", "-c"]
