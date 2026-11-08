@@ -150,6 +150,9 @@ module "k3s" {
   # provisioning; flip to true on a later apply if desired).
   vm_agent_enabled = false
 
+  # Write the kubeconfig into the home directory instead of example/.
+  kubeconfig_output_path = "~/.kube/lagrange-k3s.yaml"
+
   # Embedded etcd: removes the MariaDB dependency (single-node etcd here, since
   # the Proxmox host itself is the single point of failure).
   cluster_enable_embedded_etcd = true

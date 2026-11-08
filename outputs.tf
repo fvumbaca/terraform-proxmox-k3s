@@ -47,7 +47,7 @@ output "api_endpoint" {
 
 output "k3s_kubeconfig_path" {
   description = "Path the kubeconfig was written to at apply time (empty when kubeconfig_output_path is disabled). The server address is already rewritten to the API endpoint."
-  value       = var.kubeconfig_output_path != "" ? abspath(var.kubeconfig_output_path) : ""
+  value       = var.kubeconfig_output_path != "" ? pathexpand(var.kubeconfig_output_path) : ""
 }
 
 output "effective_no_proxy" {

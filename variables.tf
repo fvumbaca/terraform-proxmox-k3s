@@ -93,13 +93,13 @@ EOF
 
 variable "template_image" {
   type = object({
-    node_name      = string,
-    datastore_id   = string,
-    url            = string,
-    file_name      = string,
-    disk_size      = number,
-    user           = optional(string, "debian"),
-    network_bridge = optional(string, "vmbr0"),
+    node_name           = string,
+    datastore_id        = string,
+    url                 = string,
+    file_name           = string,
+    disk_size           = number,
+    user                = optional(string, "debian"),
+    network_bridge      = optional(string, "vmbr0"),
     import_datastore_id = optional(string),
   })
   default     = null
@@ -434,7 +434,7 @@ variable "db_backup_schedule" {
 }
 
 variable "kubeconfig_output_path" {
-  description = "Path (relative to the root module) where the kubeconfig is written at apply time. The file is fetched once from the first master; it is NOT refreshed on every plan. Set to \"\" to disable."
+  description = "Path where the kubeconfig is written at apply time. Relative paths are resolved against the root module; `~` is expanded to the home directory (e.g. \"~/.kube/config\"). The file is fetched once from the first master; it is NOT refreshed on every plan. Set to \"\" to disable."
   type        = string
   default     = "kubeconfig.yaml"
 }

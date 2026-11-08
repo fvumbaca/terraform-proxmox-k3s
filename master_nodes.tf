@@ -202,8 +202,9 @@ resource "null_resource" "kubeconfig" {
   count = var.kubeconfig_output_path != "" ? 1 : 0
 
   triggers = {
-    first_master_vm_id = local.listed_master_nodes[0].vm_id
-    api_endpoint       = local.api_endpoint
+    first_master_vm_id     = local.listed_master_nodes[0].vm_id
+    api_endpoint           = local.api_endpoint
+    kubeconfig_output_path = var.kubeconfig_output_path
   }
 
   depends_on = [
@@ -221,7 +222,7 @@ resource "null_resource" "kubeconfig" {
   provisioner "local-exec" {
     interpreter = var.kubeconfig_interpreter
     command     = <<-EOT
-      ${var.ssh_binary} ${var.ssh_agent_auth ? "" : "-i ${var.authorized_private_key_file}"} -o StrictHostKeyChecking=no -o UserKnownHostsFile=${var.ssh_null_device} ${local.listed_master_nodes[0].user}@${local.listed_master_nodes[0].ip} "sudo sed 's|https://127.0.0.1:6443|https://${local.api_endpoint}:6443|g' /etc/rancher/k3s/k3s.yaml > /tmp/kubeconfig.fetch && sudo chmod 644 /tmp/kubeconfig.fetch" ; ${var.scp_binary} ${var.ssh_agent_auth ? "" : "-i ${var.authorized_private_key_file}"} -o StrictHostKeyChecking=no -o UserKnownHostsFile=${var.ssh_null_device} ${local.listed_master_nodes[0].user}@${local.listed_master_nodes[0].ip}:/tmp/kubeconfig.fetch "${abspath(var.kubeconfig_output_path)}"
+      ${var.ssh_binary} ${var.ssh_agent_auth ? "" : "-i ${var.authorized_private_key_file}"} -o StrictHostKeyChecking=no -o UserKnownHostsFile=${var.ssh_null_device} ${local.listed_master_nodes[0].user}@${local.listed_master_nodes[0].ip} "sudo sed 's|https://127.0.0.1:6443|https://${local.api_endpoint}:6443|g' /etc/rancher/k3s/k3s.yaml > /tmp/kubeconfig.fetch && sudo chmod 644 /tmp/kubeconfig.fetch" ; ${var.scp_binary} ${var.ssh_agent_auth ? "" : "-i ${var.authorized_private_key_file}"} -o StrictHostKeyChecking=no -o UserKnownHostsFile=${var.ssh_null_device} ${local.listed_master_nodes[0].user}@${local.listed_master_nodes[0].ip}:/tmp/kubeconfig.fetch "${pathexpand(var.kubeconfig_output_path)}"
     EOT
   }
 }
