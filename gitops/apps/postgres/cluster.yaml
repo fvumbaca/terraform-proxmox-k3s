@@ -5,14 +5,12 @@
 # secretGenerator with a PLACEHOLDER password; replace it with a SOPS/Sealed-Secret
 # value before real use.
 #
-# Design: a single instance on the dedicated DB node. HA across DB nodes is not
-# a priority here, so CNPG streaming replication is not used. The data volume
-# uses the k3s local-path provisioner (no Longhorn on a single node). The DB
-# node has a 300G data disk at /mnt/sdb1; patch local-path-config so that node's
-# path is /mnt/sdb1 if you want CNPG data there instead of the boot disk.
+# Design: a single instance on the single k3s node. HA across nodes is not a
+# priority here, so CNPG streaming replication is not used. The data volume uses
+# the k3s local-path provisioner (no Longhorn on a single node).
 #
-# Scheduling: pinned to the dedicated "db" node pool created by the Terraform
-# module (node labeled workload=cnpg, tainted dedicated=db:NoSchedule).
+# Scheduling: runs on the single untainted k3s node; no nodeSelector/tolerations
+# are needed.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -20,15 +18,6 @@ metadata:
   namespace: postgres
 spec:
   instances: 1
-  affinity:
-    enablePodAntiAffinity: false
-    nodeSelector:
-      workload: cnpg
-    tolerations:
-      - key: dedicated
-        operator: Equal
-        value: db
-        effect: NoSchedule
   storage:
     storageClass: local-path
     size: 1Gi
