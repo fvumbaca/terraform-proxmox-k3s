@@ -11,7 +11,7 @@ This repo's GitOps source of truth is the `gitops/` tree, synced by **Flux**. Te
 
 ```powershell
 $env:KUBECONFIG = "C:\Users\jaked\Desktop\AITest\terraform-proxmox-k3s-multinode\example\kubeconfig.yaml"
-kubectl get nodes          # expect 7 Ready
+kubectl get nodes          # expect 6 Ready
 kubectl -n metallb-system get pods   # MetalLB controller+speaker running (LB IPs work)
 ```
 
@@ -78,7 +78,7 @@ spec:
   url: https://prometheus-community.github.io/helm-charts
 ```
 
-`helm-release.yaml` (trimmed — tune values for a 7-node homelab):
+`helm-release.yaml` (trimmed — tune values for a 6-node homelab):
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -148,7 +148,7 @@ kubectl -n monitoring port-forward svc/kps-grafana 3000:80
 
 ## Gotchas
 
-- **kube-prometheus-stack is heavy.** On a 7-node cluster set explicit `resources.requests`/limits and a short `retention` (2–7d) or Prometheus will eat disk. The default retention (10d) and storage can fill `local-path` quickly.
+- **kube-prometheus-stack is heavy.** On a 6-node cluster set explicit `resources.requests`/limits and a short `retention` (2–7d) or Prometheus will eat disk. The default retention (10d) and storage can fill `local-path` quickly.
 - **Never commit the Grafana admin password.** Use SOPS/Sealed Secrets (see `gitops/README.md` note) or a `secretRef`. The `adminPassword: ""` above is a placeholder.
 - **Grafana as LoadBalancer** gets a MetalLB pool IP (`10.0.6.80-99`). If the pool is exhausted or you don't want Grafana exposed, use `ClusterIP` + `port-forward`, or route it through the Traefik ingress instead.
 - **GitOps ownership:** if you `helm install` directly AND add a `HelmRelease`, two controllers fight over the same resources. Pick one. For a clean GitOps takeover of a helm-installed release, see the adoption annotations in C2.

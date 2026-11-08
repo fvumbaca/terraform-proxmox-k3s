@@ -5,28 +5,25 @@
 # secretGenerator with a PLACEHOLDER password; replace it with a SOPS/Sealed-Secret
 # value before real use.
 #
-# Design: 2 instances = 1 primary + 1 streaming replica. Each instance's data
-# volume is single-replica (longhorn-cnpg); HA comes from CNPG's Postgres
-# streaming replication, NOT Longhorn replication. reclaimPolicy=Retain means
-# deleting the Cluster keeps the volumes until you purge them manually:
+# Design: a single instance on the dedicated DB node. HA across DB nodes is not
+# a priority here, so CNPG streaming replication is not used. The data volume is
+# single-replica (longhorn-cnpg); reclaimPolicy=Retain means deleting the
+# Cluster keeps the volume until you purge it manually:
 #   kubectl -n postgres delete cluster pg-sample
 #   kubectl delete pv <retained-pvs>
 #   kubectl -n longhorn-system delete volume <orphaned-volumes>
 #
 # Scheduling: pinned to the dedicated "db" node pool created by the Terraform
-# module (nodes labeled workload=cnpg, tainted dedicated=db:NoSchedule). The
-# two instances are spread across the two DB nodes with required anti-affinity.
+# module (node labeled workload=cnpg, tainted dedicated=db:NoSchedule).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: pg-sample
   namespace: postgres
 spec:
-  instances: 2
+  instances: 1
   affinity:
-    enablePodAntiAffinity: true
-    topologyKey: kubernetes.io/hostname
-    podAntiAffinityType: required
+    enablePodAntiAffinity: false
     nodeSelector:
       workload: cnpg
     tolerations:

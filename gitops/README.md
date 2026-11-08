@@ -27,7 +27,7 @@ declares `dependsOn: [infra-controllers]`.
 
 The pool is `10.0.6.80-10.0.6.99` (L2 mode). This range is chosen to be free on
 the LAN: the Proxmox host `lagrange` uses `10.0.6.0`, the master `17`, VIP `23`,
-general workers `25/33/41/49`, and the CNPG DB workers `65/66`. DHCP only covers
+general workers `25/33/41/49`, and the CNPG DB worker `65`. DHCP only covers
 `10.0.0.86-10.0.4.254` (not `10.0.6.x`). **Confirm `10.0.6.80-99` is unassigned
 on your network before use** and edit `infrastructure/config/metallb/ip-pool.yaml`
 if needed.

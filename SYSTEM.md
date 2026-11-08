@@ -6,7 +6,7 @@ reference / re-deploys.
 
 > **Current deployment:** the example now targets the single Proxmox host
 > `lagrange` (`10.0.6.0`). See `example/README.md` for the current topology
-> (one master, four general workers, two dedicated CNPG DB workers). The
+> (one master, four general workers, one dedicated CNPG DB worker). The
 > `opti0`–`opti8` details below are retained as historical notes.
 
 ## 1. What this is

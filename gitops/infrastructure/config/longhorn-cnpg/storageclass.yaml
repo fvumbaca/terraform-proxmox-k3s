@@ -11,8 +11,8 @@
 # reclaimPolicy: Retain so a deleted PVC never silently destroys database data.
 #
 # CNPG pods are pinned to the dedicated "db" node pool (label workload=cnpg),
-# whose nodes have an additional 100G disk mounted at /mnt/sdb1. Configure
-# Longhorn to use that path on the DB nodes (e.g. tag the disk "db" and add
+# whose node has an additional 300G disk mounted at /mnt/sdb1. Configure
+# Longhorn to use that path on the DB node (e.g. tag the disk "db" and add
 # `diskSelector: "db"` below) so database volumes land on the dedicated data
 # disk rather than the boot disk.
 apiVersion: storage.k8s.io/v1

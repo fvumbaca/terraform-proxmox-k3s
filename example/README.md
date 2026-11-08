@@ -13,7 +13,7 @@ This will spin up:
 
 - 1 master node (`8 cores / 16 GiB`, 48G on `local-lvm`) running the embedded-etcd control plane. It is tainted (`CriticalAddonsOnly:NoExecute`), so only critical system pods schedule there.
 - 4 general-purpose workers (`4 cores / 24 GiB`, 64G on `fast-local`), one per pool `pool2`..`pool5`.
-- 2 dedicated CNPG database workers (`4 cores / 32 GiB`, 100G boot + 100G Longhorn data disk on `fast-local`), in pool `db`. They are labeled `workload=cnpg` and tainted `dedicated=db:NoSchedule` so only CloudNativePG pods land there.
+- 1 dedicated CNPG database worker (`8 cores / 64 GiB`, 100G boot + 300G Longhorn data disk on `fast-local`), in pool `db`. It is labeled `workload=cnpg` and tainted `dedicated=db:NoSchedule` so only CloudNativePG pods land there.
 - The support VM is disabled (`support_node_enabled = false`) because embedded etcd removes the MariaDB dependency.
 
 Total: 32 vCPUs / 176 GiB RAM / ~672 GiB `fast-local` + 48 GiB `local-lvm`,
@@ -23,7 +23,7 @@ leaving headroom for the Proxmox host and ZFS ARC (capped at 16 GiB).
 
 - Control-plane block `10.0.6.16/29`: support `.16` (unused), master `.17`, API VIP `.23`.
 - General worker pools on `10.0.6.24/29`, `.32/29`, `.40/29`, `.48/29` (workers `.25`, `.33`, `.41`, `.49`).
-- CNPG DB pool on `10.0.6.64/29` (workers `.65`, `.66`).
+- CNPG DB pool on `10.0.6.64/29` (worker `.65`).
 - MetalLB pool `10.0.6.80-10.0.6.99`.
 - All VMs are addressed with the `/8` mask from `lan_subnet`; the `/29` blocks are just non-overlapping allocation ranges.
 

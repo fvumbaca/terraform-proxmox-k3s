@@ -92,7 +92,7 @@ provider "proxmox" {
 # VM layout (32 vCPUs / 176 GiB RAM / ~672 GiB fast-local + 48 GiB local-lvm):
 #   master0   : 8c/16G, 48G on local-lvm   (control-plane only)
 #   pool2-5   : 4c/24G, 64G on fast-local  (general workloads)
-#   db0-1     : 4c/32G, 100G boot + 100G Longhorn data disk on fast-local (CNPG)
+#   db0       : 8c/64G, 100G boot + 300G Longhorn data disk on fast-local (CNPG)
 #
 # One master runs the whole control plane. The Proxmox host is itself a single
 # point of failure, so extra master VMs would not add real HA. The master is
@@ -102,7 +102,7 @@ provider "proxmox" {
 # IP plan (LAN is 10.0.0.0/8, gateway 10.0.0.1; Proxmox host is 10.0.6.0):
 #   control plane 10.0.6.16/29 -> master .17, VIP .23
 #   workers       10.0.6.24/29, .32/29, .40/29, .48/29 -> .25/.33/.41/.49
-#   CNPG DB pool  10.0.6.64/29 -> .65/.66
+#   CNPG DB pool  10.0.6.64/29 -> .65
 #   MetalLB       10.0.6.80-10.0.6.99
 module "k3s" {
   source                      = "../"
@@ -129,7 +129,7 @@ module "k3s" {
     user                = "debian"
   }
 
-  # template = 8000, support = 901 (disabled), master = 902, workers = 903-908
+  # template = 8000, support = 901 (disabled), master = 902, workers = 903-907
   vm_id_start     = 900
   network_gateway = var.network_gateway
   lan_subnet      = var.lan_subnet

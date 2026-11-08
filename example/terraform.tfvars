@@ -96,25 +96,25 @@ node_pools = [
     }
   },
   {
-    # Dedicated CloudNativePG pool. The taint keeps non-DB workloads off these
-    # nodes; CNPG pins its instances here via nodeSelector/tolerations (see
-    # gitops/apps/postgres/cluster.yaml). Each node gets a 100G boot disk plus
-    # a 100G data disk mounted at /mnt/sdb1 for Longhorn.
+    # Dedicated CloudNativePG pool. A single larger node is enough here since
+    # HA across DB nodes is not a priority. The taint keeps non-DB workloads
+    # off this node; CNPG pins its instance here via nodeSelector/tolerations
+    # (see gitops/apps/postgres/cluster.yaml). The node gets a 100G boot disk
+    # plus a 300G data disk mounted at /mnt/sdb1 for Longhorn.
     #
     # IMPORTANT: Longhorn's longhorn-manager DaemonSet must tolerate
-    # dedicated=db:NoSchedule on these nodes (add the toleration to the
-    # Longhorn Helm values) and use /mnt/sdb1 as its data path. Without the
-    # toleration, Longhorn cannot run here and CNPG volumes cannot be
-    # provisioned on the DB nodes.
-    subnet      = "10.0.6.64/29" # db .65/.66
+    # dedicated=db:NoSchedule on this node (add the toleration to the Longhorn
+    # Helm values) and use /mnt/sdb1 as its data path. Without the toleration,
+    # Longhorn cannot run here and CNPG volumes cannot be provisioned.
+    subnet      = "10.0.6.64/29" # db .65
     target_node = "lagrange"
-    size        = 2
+    size        = 1
     node_pool_settings = {
       name           = "db"
       taints         = ["dedicated=db:NoSchedule"]
-      cores          = 4
+      cores          = 8
       sockets        = 1
-      memory         = 32768
+      memory         = 65536
       storage_id     = "fast-local"
       disk_size      = "100G"
       user           = "k3s"
@@ -123,7 +123,7 @@ node_pools = [
       node_labels    = ["workload=cnpg"]
       additional_storage = {
         storage_id = "fast-local"
-        disk_size  = "100G"
+        disk_size  = "300G"
       }
     }
   }
