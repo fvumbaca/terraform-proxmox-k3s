@@ -12,6 +12,10 @@
 #   kubectl -n postgres delete cluster pg-sample
 #   kubectl delete pv <retained-pvs>
 #   kubectl -n longhorn-system delete volume <orphaned-volumes>
+#
+# Scheduling: pinned to the dedicated "db" node pool created by the Terraform
+# module (nodes labeled workload=cnpg, tainted dedicated=db:NoSchedule). The
+# two instances are spread across the two DB nodes with required anti-affinity.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -19,6 +23,17 @@ metadata:
   namespace: postgres
 spec:
   instances: 2
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+    nodeSelector:
+      workload: cnpg
+    tolerations:
+      - key: dedicated
+        operator: Equal
+        value: db
+        effect: NoSchedule
   storage:
     storageClass: longhorn-cnpg
     size: 1Gi

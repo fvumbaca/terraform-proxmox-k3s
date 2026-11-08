@@ -17,4 +17,6 @@ secret_key = "YOUR_B2_APPLICATION_KEY"
 # Override bucket/endpoint here instead of main.tf if you prefer to keep ALL
 # backend config out of the repo (uncomment as needed):
 # bucket   = "YOUR-B2-BUCKET"
-# endpoint = "https://s3.us-west-004.backblazeb2.com"
+# endpoints = {
+#   s3 = "https://s3.us-west-004.backblazeb2.com"
+# }

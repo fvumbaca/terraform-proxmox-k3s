@@ -4,6 +4,11 @@ Operational notes, architecture, and the full list of issues found & fixed while
 bringing this cluster up on the `opti0`–`opti8` Proxmox cluster. Kept for future
 reference / re-deploys.
 
+> **Current deployment:** the example now targets the single Proxmox host
+> `lagrange` (`10.0.6.0`). See `example/README.md` for the current topology
+> (one master, four general workers, two dedicated CNPG DB workers). The
+> `opti0`–`opti8` details below are retained as historical notes.
+
 ## 1. What this is
 
 A Terraform module that provisions a HA k3s cluster on Proxmox VE:
@@ -128,9 +133,9 @@ ssh k3s@10.0.5.17 'sudo k3s kubectl get nodes -o wide'
 A GitOps tree lives in `gitops/` (see `gitops/README.md` for full bootstrap
 steps). Summary:
 
-- **Flux** is the sync engine. `flux bootstrap git --path=clusters/opti-k3s`
+- **Flux** is the sync engine. `flux bootstrap git --path=clusters/lagrange-k3s`
   installs the controllers and wires the `GitRepository` → root `Kustomization`.
-- **Layered Kustomizations** (in `clusters/opti-k3s/flux-system/`):
+- **Layered Kustomizations** (in `clusters/lagrange-k3s/flux-system/`):
   `infra-controllers` → `infra-config` (dependsOn) → `apps` (dependsOn), giving
   ordered, pruned reconciliation.
 - **MetalLB** (controller in `infrastructure/controllers/metallb`, config in

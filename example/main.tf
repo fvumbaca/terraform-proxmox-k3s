@@ -11,22 +11,28 @@ terraform {
   # credentials are supplied at init time via a gitignored backend.hcl:
   #   terraform init -backend-config=backend.hcl
   # (see example/README.md for the local->remote migration step).
+  #
+  # NOTE: the key is intentionally different from the old opti-k3s state. The
+  # old cluster lived on the (now unreachable) opti0-8 hosts; starting a fresh
+  # state key avoids Terraform trying to destroy those orphaned resources.
   backend "s3" {
     # B2 bucket name (must be globally unique on B2).
     bucket = "dellathefella-terraform-state"
     # Path/key of the state file inside the bucket.
-    key = "opti-k3s/terraform.tfstate"
+    key = "lagrange-k3s/terraform.tfstate"
     # B2 region of the bucket. Must match the endpoint below.
     region = "us-east-005"
     # B2 S3-compatible endpoint for that region.
-    endpoint = "https://s3.us-east-005.backblazeb2.com"
+    endpoints = {
+      s3 = "https://s3.us-east-005.backblazeb2.com"
+    }
 
     # B2 quirks: it is not real AWS, so skip the AWS-specific checks.
     skip_credentials_validation = true
     skip_metadata_api_check     = true
     skip_region_validation      = true
     skip_requesting_account_id  = true
-    force_path_style            = true
+    use_path_style              = true
 
     # access_key / secret_key are NOT set here (no variables in backend blocks).
     # Provide them via backend.hcl (gitignored) or env vars:
@@ -45,29 +51,59 @@ variable "pm_token_secret" {
   sensitive   = true
 }
 
+# Topology inputs. Kept as root variables so terraform.tfvars is the single
+# place to edit node sizing / IP ranges.
+variable "network_gateway" {
+  description = "LAN gateway handed to every node via cloud-init."
+  type        = string
+}
+
+variable "lan_subnet" {
+  description = "LAN CIDR; only the prefix length is applied to each node."
+  type        = string
+}
+
+variable "control_plane_subnet" {
+  description = "CIDR used for the support/master addresses and the API VIP."
+  type        = string
+}
+
+variable "master_nodes" {
+  description = "Control-plane VM definitions."
+  type        = any
+}
+
+variable "node_pools" {
+  description = "Worker/DB node pool definitions."
+  type        = any
+}
+
 provider "proxmox" {
-  endpoint  = "https://10.0.5.4:8006/"
+  endpoint  = "https://10.0.6.0:8006/"
   api_token = "${var.pm_token_id}=${var.pm_token_secret}"
   insecure  = true
 }
 
-# Topology for 9 identical nodes (4 cores / 16 GB each), one VM per node.
+# Single Proxmox host "lagrange" (10.0.6.0):
+#   Intel Xeon E5-2699 v3 (18 cores / 36 threads), 251 GiB RAM,
+#   ZFS ARC capped at 16 GiB, fast-local ZFS pool (~955 GiB),
+#   local-lvm (~365 GiB), local dir (~89 GiB) for ISO/import.
 #
-#   opti0 : master0 (4c/8G, control-plane only)
-#   opti2 : master1 (4c/8G, control-plane only)
-#   opti3 : master2 (4c/8G, control-plane only)
-#   opti5 : worker pool2 (4c/13G)
-#   opti6 : worker pool3 (4c/13G)
-#   opti7 : worker pool4 (4c/13G)
-#   opti8 : worker pool5 (4c/13G)
+# VM layout (32 vCPUs / 176 GiB RAM / ~672 GiB fast-local + 48 GiB local-lvm):
+#   master0   : 8c/16G, 48G on local-lvm   (control-plane only)
+#   pool2-5   : 4c/24G, 64G on fast-local  (general workloads)
+#   db0-1     : 4c/32G, 100G boot + 100G Longhorn data disk on fast-local (CNPG)
 #
-# CriticalAddonsOnly:NoExecute so only critical system pods schedule there.
-# The support node is disabled (embedded etcd makes its MariaDB role moot).
-# Each VM leaves ~1.5-3 GB of host RAM for Proxmox itself.
+# One master runs the whole control plane. The Proxmox host is itself a single
+# point of failure, so extra master VMs would not add real HA. The master is
+# tainted CriticalAddonsOnly:NoExecute so only critical system pods schedule
+# there. The support node is disabled (embedded etcd makes its MariaDB role moot).
 #
-# IP plan (LAN is 10.0.0.0/8, gateway 10.0.0.1, DHCP 10.0.0.86-10.0.4.254).
-# All node IPs are in 10.0.5.x, outside DHCP and clear of the PVE hosts
-# (10.0.5.1-9). The /8 prefix from lan_subnet is applied to every node.
+# IP plan (LAN is 10.0.0.0/8, gateway 10.0.0.1; Proxmox host is 10.0.6.0):
+#   control plane 10.0.6.16/29 -> master .17, VIP .23
+#   workers       10.0.6.24/29, .32/29, .40/29, .48/29 -> .25/.33/.41/.49
+#   CNPG DB pool  10.0.6.64/29 -> .65/.66
+#   MetalLB       10.0.6.80-10.0.6.99
 module "k3s" {
   source                      = "../"
   authorized_keys_file        = "~/.ssh/id_ed25519.pub"
@@ -82,10 +118,10 @@ module "k3s" {
 
   # Module builds the Debian 13 cloud-init template itself (no manual steps).
   # The downloaded qcow2 lands on "local" (has the "import" content type); the
-  # template disk + cloud-init are created on "local-lvm" (has "images").
+  # template disk + cloud-init are created on "fast-local" (has "images").
   template_image = {
-    node_name           = "opti0"
-    datastore_id        = "local-lvm"
+    node_name           = "lagrange"
+    datastore_id        = "fast-local"
     import_datastore_id = "local"
     url                 = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
     file_name           = "debian-13-genericcloud-amd64.qcow2"
@@ -93,20 +129,20 @@ module "k3s" {
     user                = "debian"
   }
 
-  # per-host templates at 8000+, support = 901 (disabled), masters = 902-904, workers = 905-908
+  # template = 8000, support = 901 (disabled), master = 902, workers = 903-908
   vm_id_start     = 900
-  network_gateway = "10.0.0.1"
-  lan_subnet      = "10.0.0.1/8"
-  cluster_name    = "opti-k3s"
+  network_gateway = var.network_gateway
+  lan_subnet      = var.lan_subnet
+  cluster_name    = "lagrange-k3s"
 
   dns_servers = ["10.0.0.1", "1.1.1.1"]
 
-  # All 9 hosts are the same CPU, so host passthrough is safe and fastest.
+  # Single host, so host passthrough is safe and fastest.
   cpu_type = "host"
 
-  # Floating API VIP (keepalived) across the masters. Free address in the
-  # control-plane block (support=.16, masters=.17-.19, VIP=.23).
-  api_vip        = "10.0.5.23"
+  # Floating API VIP (keepalived) held by the master. Free address in the
+  # control-plane block (support=.16, master=.17, VIP=.23).
+  api_vip        = "10.0.6.23"
   vrrp_router_id = 51
   vrrp_auth_pass = "optivip1" # max 8 chars (VRRPv2)
 
@@ -114,7 +150,8 @@ module "k3s" {
   # provisioning; flip to true on a later apply if desired).
   vm_agent_enabled = false
 
-  # Embedded etcd: HA control plane, no MariaDB single point of failure.
+  # Embedded etcd: removes the MariaDB dependency (single-node etcd here, since
+  # the Proxmox host itself is the single point of failure).
   cluster_enable_embedded_etcd = true
 
   # Support node has no role under embedded etcd -> don't create it.
@@ -125,120 +162,17 @@ module "k3s" {
     "servicelb"
   ]
 
-  # 10.0.5.16/29 -> support .16 (unused), masters .17-.19, VIP .23
-  control_plane_subnet = "10.0.5.16/29"
+  # 10.0.6.16/29 -> support .16 (unused), master .17, VIP .23
+  control_plane_subnet = var.control_plane_subnet
 
   # Reserve the control plane: only critical system pods schedule on masters.
   master_taints = ["CriticalAddonsOnly=true:NoExecute"]
 
-  # Control plane: 3 masters on opti0/2/3, control-plane only (odd count for etcd quorum).
-  master_nodes = [
-    {
-      target_node    = "opti0"
-      cores          = 4
-      sockets        = 1
-      memory         = 8192
-      storage_id     = "local-lvm"
-      disk_size      = "48G"
-      user           = "k3s"
-      network_bridge = "vmbr0"
-      network_tag    = -1
-    },
-    {
-      target_node    = "opti2"
-      cores          = 4
-      sockets        = 1
-      memory         = 8192
-      storage_id     = "local-lvm"
-      disk_size      = "48G"
-      user           = "k3s"
-      network_bridge = "vmbr0"
-      network_tag    = -1
-    },
-    {
-      target_node    = "opti3"
-      cores          = 4
-      sockets        = 1
-      memory         = 8192
-      storage_id     = "local-lvm"
-      disk_size      = "48G"
-      user           = "k3s"
-      network_bridge = "vmbr0"
-      network_tag    = -1
-    }
-  ]
+  # Control plane: one master on lagrange, control-plane only.
+  master_nodes = var.master_nodes
 
-  # Workers: one per remaining host (opti5-8), 4 cores / 13 GB each (opti3 is master2).
-  node_pools = [
-    {
-      subnet      = "10.0.5.40/29" # worker .41
-      target_node = "opti5"
-      size        = 1
-      node_pool_settings = {
-        name           = "pool2"
-        taints         = []
-        cores          = 4
-        sockets        = 1
-        memory         = 13312
-        storage_id     = "local-lvm"
-        disk_size      = "128G"
-        user           = "k3s"
-        network_bridge = "vmbr0"
-        network_tag    = -1
-      }
-    },
-    {
-      subnet      = "10.0.5.48/29" # worker .49
-      target_node = "opti6"
-      size        = 1
-      node_pool_settings = {
-        name           = "pool3"
-        taints         = []
-        cores          = 4
-        sockets        = 1
-        memory         = 13312
-        storage_id     = "local-lvm"
-        disk_size      = "128G"
-        user           = "k3s"
-        network_bridge = "vmbr0"
-        network_tag    = -1
-      }
-    },
-    {
-      subnet      = "10.0.5.56/29" # worker .57
-      target_node = "opti7"
-      size        = 1
-      node_pool_settings = {
-        name           = "pool4"
-        taints         = []
-        cores          = 4
-        sockets        = 1
-        memory         = 13312
-        storage_id     = "local-lvm"
-        disk_size      = "128G"
-        user           = "k3s"
-        network_bridge = "vmbr0"
-        network_tag    = -1
-      }
-    },
-    {
-      subnet      = "10.0.5.64/29" # worker .65
-      target_node = "opti8"
-      size        = 1
-      node_pool_settings = {
-        name           = "pool5"
-        taints         = []
-        cores          = 4
-        sockets        = 1
-        memory         = 13312
-        storage_id     = "local-lvm"
-        disk_size      = "128G"
-        user           = "k3s"
-        network_bridge = "vmbr0"
-        network_tag    = -1
-      }
-    }
-  ]
+  # General workers + a dedicated, tainted CNPG DB pool. See terraform.tfvars.
+  node_pools = var.node_pools
 }
 
 # Templates the MetalLB GitOps manifests from variables (pure file generation, no
@@ -246,7 +180,7 @@ module "k3s" {
 # regenerate gitops/infrastructure/**, which Flux then syncs.
 module "metallb" {
   source         = "../metallb"
-  pool_addresses = ["10.0.5.80-10.0.5.99"]
+  pool_addresses = ["10.0.6.80-10.0.6.99"]
   interfaces     = ["eth0"]
   output_dir     = "${path.root}/../gitops/infrastructure"
 }

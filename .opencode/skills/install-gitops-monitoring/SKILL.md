@@ -1,6 +1,6 @@
 ---
 name: install-gitops-monitoring
-description: Use when installing the GitOps toolchain (Flux CLI + bootstrap) and/or a monitoring stack (kube-prometheus-stack: Prometheus, Grafana, Alertmanager) onto the opti-k3s cluster, or when wiring such add-ons into the gitops/ repo layout. Triggers on "install flux", "install gitops tools", "install monitoring", "prometheus", "grafana", "kube-prometheus-stack".
+description: Use when installing the GitOps toolchain (Flux CLI + bootstrap) and/or a monitoring stack (kube-prometheus-stack: Prometheus, Grafana, Alertmanager) onto the lagrange-k3s cluster, or when wiring such add-ons into the gitops/ repo layout. Triggers on "install flux", "install gitops tools", "install monitoring", "prometheus", "grafana", "kube-prometheus-stack".
 ---
 
 # Install GitOps tools + monitoring (Flux + kube-prometheus-stack)
@@ -11,11 +11,11 @@ This repo's GitOps source of truth is the `gitops/` tree, synced by **Flux**. Te
 
 ```powershell
 $env:KUBECONFIG = "C:\Users\jaked\Desktop\AITest\terraform-proxmox-k3s-multinode\example\kubeconfig.yaml"
-kubectl get nodes          # expect 9 Ready
+kubectl get nodes          # expect 7 Ready
 kubectl -n metallb-system get pods   # MetalLB controller+speaker running (LB IPs work)
 ```
 
-- Kubeconfig server must be the VIP `https://10.0.5.23:6443` (not a single master).
+- Kubeconfig server must be the VIP `https://10.0.6.23:6443` (not a single master).
 - MetalLB must be installed so `LoadBalancer` services (Grafana) get a pool IP.
 - SSH keypair bootstrapped (see the `bootstrap-ssh-keys` skill) — Flux's `flux bootstrap git` needs it for the git transport.
 
@@ -35,14 +35,14 @@ flux --version
 
 ## Part B — Bootstrap Flux
 
-Pre-flight, then bootstrap against this repo's `clusters/opti-k3s` path:
+Pre-flight, then bootstrap against this repo's `clusters/lagrange-k3s` path:
 
 ```powershell
 flux check --pre
 
 flux bootstrap git `
-  --url=ssh://git@YOUR_HOST/YOUR_ORG/opti-k3s-gitops.git `
-  --path=clusters/opti-k3s `
+  --url=ssh://git@YOUR_HOST/YOUR_ORG/lagrange-k3s-gitops.git `
+  --path=clusters/lagrange-k3s `
   --branch=main `
   --private-key-file=C:/Users/jaked/.ssh/id_ed25519 `
   --components=source-controller,kustomize-controller,helm-controller,notification-controller
@@ -78,7 +78,7 @@ spec:
   url: https://prometheus-community.github.io/helm-charts
 ```
 
-`helm-release.yaml` (trimmed — tune values for a 9-node homelab):
+`helm-release.yaml` (trimmed — tune values for a 7-node homelab):
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -101,7 +101,7 @@ spec:
       enabled: true
       adminPassword: ""   # set via SOPS/secret ref, NOT plaintext
       service:
-        type: LoadBalancer   # MetalLB assigns 10.0.5.80-99
+        type: LoadBalancer   # MetalLB assigns 10.0.6.80-99
     prometheus:
       prometheusSpec:
         retention: 7d
@@ -133,7 +133,7 @@ helm install kps prometheus-community/kube-prometheus-stack `
 
 ```powershell
 kubectl -n monitoring get pods -w        # prometheus, grafana, alertmanager, operators -> Running
-kubectl -n monitoring get svc           # grafana EXTERNAL-IP in 10.0.5.80-99
+kubectl -n monitoring get svc           # grafana EXTERNAL-IP in 10.0.6.80-99
 # Grafana UI:
 curl.exe -sk http://<grafana-lb-ip>:3000/api/health
 # Prometheus:
@@ -148,9 +148,9 @@ kubectl -n monitoring port-forward svc/kps-grafana 3000:80
 
 ## Gotchas
 
-- **kube-prometheus-stack is heavy.** On a 9-node cluster set explicit `resources.requests`/limits and a short `retention` (2–7d) or Prometheus will eat disk. The default retention (10d) and storage can fill `local-path` quickly.
+- **kube-prometheus-stack is heavy.** On a 7-node cluster set explicit `resources.requests`/limits and a short `retention` (2–7d) or Prometheus will eat disk. The default retention (10d) and storage can fill `local-path` quickly.
 - **Never commit the Grafana admin password.** Use SOPS/Sealed Secrets (see `gitops/README.md` note) or a `secretRef`. The `adminPassword: ""` above is a placeholder.
-- **Grafana as LoadBalancer** gets a MetalLB pool IP (`10.0.5.80-99`). If the pool is exhausted or you don't want Grafana exposed, use `ClusterIP` + `port-forward`, or route it through the Traefik ingress instead.
+- **Grafana as LoadBalancer** gets a MetalLB pool IP (`10.0.6.80-99`). If the pool is exhausted or you don't want Grafana exposed, use `ClusterIP` + `port-forward`, or route it through the Traefik ingress instead.
 - **GitOps ownership:** if you `helm install` directly AND add a `HelmRelease`, two controllers fight over the same resources. Pick one. For a clean GitOps takeover of a helm-installed release, see the adoption annotations in C2.
 - **CRD wait:** kube-prometheus-stack installs many CRDs; the `HelmRelease` may need `install.crds: create-replace` or a CRD-first step if Flux reports "no matches for kind". The chart's bundled CRDs usually handle this.
 - **Flux `flux-system` namespace:** the controllers live in `flux-system`; the monitoring stack lives in `monitoring`. The `HelmRelease`/`HelmRepository` for monitoring can sit in `flux-system` (as above) or in `monitoring` — keep `sourceRef.namespace` consistent with where the `HelmRepository` lives.

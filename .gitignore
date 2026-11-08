@@ -9,6 +9,9 @@ backend.hcl
 # Local .terraform directories
 **/.terraform/*
 
+# Local Terraform binary used for validation/apply (not part of the repo)
+terraform_bin/
+
 # .tfstate files
 *.tfstate
 *.tfstate.*

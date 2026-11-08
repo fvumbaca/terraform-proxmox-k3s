@@ -10,7 +10,7 @@ spec:
   interval: 1m0s
   ref:
     branch: main
-  url: ssh://git@YOUR_HOST/YOUR_ORG/opti-k3s-gitops.git
+  url: ssh://git@YOUR_HOST/YOUR_ORG/lagrange-k3s-gitops.git
   secretRef:
     name: flux-system
 ---
@@ -23,7 +23,7 @@ spec:
   interval: 10m0s
   retryInterval: 2m0s
   timeout: 5m0s
-  path: ./clusters/opti-k3s/flux-system
+  path: ./clusters/lagrange-k3s/flux-system
   prune: true
   sourceRef:
     kind: GitRepository

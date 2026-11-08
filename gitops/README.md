@@ -1,6 +1,6 @@
 # GitOps — Flux + MetalLB
 
-GitOps scaffolding for the `opti-k3s` cluster. [Flux](https://fluxcd.io) is the
+GitOps scaffolding for the `lagrange-k3s` cluster. [Flux](https://fluxcd.io) is the
 sync engine; [MetalLB](https://metallb.io) provides `LoadBalancer` IPs (k3s's
 built-in `servicelb` is disabled in the Terraform module).
 
@@ -8,7 +8,7 @@ built-in `servicelb` is disabled in the Terraform module).
 
 ```
 gitops/
-├── clusters/opti-k3s/flux-system/   # Flux sync objects (GitRepository + Kustomizations)
+├── clusters/lagrange-k3s/flux-system/   # Flux sync objects (GitRepository + Kustomizations)
 │   ├── gotk-sync.yaml                # GitRepository + root Kustomization
 │   ├── infra-controllers.yaml        # -> infrastructure/controllers (MetalLB controller)
 │   ├── infra-config.yaml             # -> infrastructure/config (dependsOn controllers)
@@ -25,24 +25,25 @@ declares `dependsOn: [infra-controllers]`.
 
 ## MetalLB IP pool
 
-The pool is `10.0.5.80-10.0.5.99` (L2 mode). This range is chosen to be free on
-the LAN: PVE hosts use `10.0.5.1-9`, masters `17-19`, VIP `23`, workers
-`25/33/41/49/57/65`, and DHCP only covers `10.0.0.86-10.0.4.254` (not
-`10.0.5.x`). **Confirm `10.0.5.80-99` is unassigned on your network before use**
-and edit `infrastructure/config/metallb/ip-pool.yaml` if needed.
+The pool is `10.0.6.80-10.0.6.99` (L2 mode). This range is chosen to be free on
+the LAN: the Proxmox host `lagrange` uses `10.0.6.0`, the master `17`, VIP `23`,
+general workers `25/33/41/49`, and the CNPG DB workers `65/66`. DHCP only covers
+`10.0.0.86-10.0.4.254` (not `10.0.6.x`). **Confirm `10.0.6.80-99` is unassigned
+on your network before use** and edit `infrastructure/config/metallb/ip-pool.yaml`
+if needed.
 
 ## Bootstrap Flux
 
 Flux is installed with `flux bootstrap`, which installs the controllers and
 commits the `flux-system` manifests to your git repo. Point it at this repo's
-`clusters/opti-k3s` path:
+`clusters/lagrange-k3s` path:
 
 ```bash
-export KUBECONFIG=./example/kubeconfig.yaml   # server = VIP 10.0.5.23
+export KUBECONFIG=./example/kubeconfig.yaml   # server = VIP 10.0.6.23
 
 flux bootstrap git \
-  --url=ssh://git@YOUR_HOST/YOUR_ORG/opti-k3s-gitops.git \
-  --path=clusters/opti-k3s \
+  --url=ssh://git@YOUR_HOST/YOUR_ORG/lagrange-k3s-gitops.git \
+  --path=clusters/lagrange-k3s \
   --branch=main \
   --private-key-file=~/.ssh/id_ed25519 \
   --components=source-controller,kustomize-controller,helm-controller,notification-controller
@@ -65,7 +66,7 @@ kubectl -n metallb-system get ipaddresspool,l2advertisement
 ```bash
 kubectl create deploy nginx --image=nginx --port=80
 kubectl expose deploy nginx --port=80 --type=LoadBalancer
-kubectl get svc nginx -w   # EXTERNAL-IP should land in 10.0.5.80-99
+kubectl get svc nginx -w   # EXTERNAL-IP should land in 10.0.6.80-99
 ```
 
 ## Notes

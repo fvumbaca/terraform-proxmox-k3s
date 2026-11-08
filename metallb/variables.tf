@@ -6,7 +6,7 @@ variable "pool_name" {
 
 variable "pool_addresses" {
   description = <<-EOF
-  List of address ranges/CIDRs for the pool, e.g. ["10.0.5.80-10.0.5.99"].
+  List of address ranges/CIDRs for the pool, e.g. ["10.0.6.80-10.0.6.99"].
   These MUST be free on the L2 segment (outside DHCP and any VM assignments).
   EOF
   type        = list(string)
