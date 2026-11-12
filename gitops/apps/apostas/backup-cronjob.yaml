@@ -36,7 +36,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: backup
-              image: 10.0.6.9:30500/apostas/app:93d6d3d
+              image: 10.0.6.9:30500/apostas/app:49fe39e
               imagePullPolicy: Always
               command: ["/usr/local/bin/apostas-backup"]
               envFrom:
