@@ -129,12 +129,12 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: db-wait
-          image: 10.0.6.9:30500/apostas/app:0.1.0
+          image: 10.0.6.9:30500/apostas/app:93d6d3d
           imagePullPolicy: Always
           command: ["/bin/sh", "-c", "for i in $(seq 1 60); do pg_isready -h apostas-postgres-rw -p 5432 && exit 0; sleep 2; done; echo 'postgres unreachable' >&2; exit 1"]
       containers:
         - name: engine
-          image: 10.0.6.9:30500/apostas/app:0.1.0
+          image: 10.0.6.9:30500/apostas/app:93d6d3d
           imagePullPolicy: Always
           command: ["/usr/local/bin/apostas-engine"]
           envFrom:
@@ -187,6 +187,8 @@ kind: Service
 metadata:
   name: apostas-engine
   namespace: apostas
+  labels:
+    app: apostas-engine
 spec:
   selector:
     app: apostas-engine
@@ -221,12 +223,12 @@ spec:
                 topologyKey: kubernetes.io/hostname
       initContainers:
         - name: db-wait
-          image: 10.0.6.9:30500/apostas/app:0.1.0
+          image: 10.0.6.9:30500/apostas/app:93d6d3d
           imagePullPolicy: Always
           command: ["/bin/sh", "-c", "for i in $(seq 1 60); do pg_isready -h apostas-postgres-rw -p 5432 && exit 0; sleep 2; done; echo 'postgres unreachable' >&2; exit 1"]
       containers:
         - name: web
-          image: 10.0.6.9:30500/apostas/app:0.1.0
+          image: 10.0.6.9:30500/apostas/app:93d6d3d
           imagePullPolicy: Always
           command: ["/usr/local/bin/apostas-web"]
           envFrom:
