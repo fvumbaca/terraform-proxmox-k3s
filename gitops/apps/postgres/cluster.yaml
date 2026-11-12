@@ -27,6 +27,14 @@ spec:
       owner: appuser
       secret:
         name: pg-sample-app
+  # Native continuous backup: WAL archiving + base backups via the Barman Cloud
+  # plugin. Requires cert-manager + plugin-barman-cloud (infrastructure/
+  # controllers) and the pg-sample-b2-creds secret (see object-store.yaml).
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: pg-sample-b2-store
   resources:
     requests:
       cpu: 100m

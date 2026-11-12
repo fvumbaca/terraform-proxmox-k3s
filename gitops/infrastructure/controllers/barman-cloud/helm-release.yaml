@@ -1,0 +1,37 @@
+# Barman Cloud CNPG-I plugin. Runs in the same namespace as the CloudNativePG
+# operator (cnpg-system) and provides native base backups + WAL archiving to an
+# S3-compatible object store (Backblaze B2 here).
+#
+# Prerequisites (both declared under infrastructure/controllers):
+#   - cert-manager (plugin webhook certificates)
+#   - cloudnative-pg >= 1.30 (plugin chart 0.9.x requires it)
+#
+# The plugin chart installs the ObjectStore CRD
+# (objectstores.barmancloud.cnpg.io). The cluster references an ObjectStore via
+# spec.plugins with isWALArchiver: true; see apps/postgres/cluster.yaml.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+  namespace: cnpg-system
+spec:
+  interval: 30m
+  timeout: 10m
+  dependsOn:
+    - name: cert-manager
+      namespace: cert-manager
+    - name: cloudnative-pg
+      namespace: cnpg-system
+  chart:
+    spec:
+      chart: plugin-barman-cloud
+      version: ">=0.9.0 <0.10.0"
+      sourceRef:
+        kind: HelmRepository
+        name: cloudnative-pg
+        namespace: flux-system
+      interval: 1h
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace

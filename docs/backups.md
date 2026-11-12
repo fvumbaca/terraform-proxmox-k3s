@@ -62,3 +62,18 @@ sudo systemctl start k3s-agent
 
 Neither mechanism copies off the VM. Add your own sync (rsync/restic/borg) of
 `/var/backups/k3s` (MariaDB) or the etcd snapshot dir to external storage.
+
+## CloudNativePG native backups (Barman Cloud plugin)
+
+The GitOps tree installs cert-manager and the `plugin-barman-cloud` HelmRelease
+under `gitops/infrastructure/controllers`, and declares an `ObjectStore` plus a
+daily `ScheduledBackup` for `pg-sample` under `gitops/apps/postgres`. Native
+CNPG backups add continuous WAL archiving (minutes-level RPO) alongside the
+existing `pg_dump` cronjob.
+
+See `gitops/README.md` → **CNPG native backups (Barman Cloud plugin)** for the
+credentials secret, verification commands, and point-in-time restore recipe.
+
+For the live `cepo` cluster the same pattern uses the `cepo-b2-creds` secret and
+an `ObjectStore` named `cepo-b2-store` at `s3://cepo-archive/cepo-postgres`.
+

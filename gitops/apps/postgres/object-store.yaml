@@ -1,0 +1,32 @@
+# Native CloudNativePG backup target for the pg-sample cluster.
+#
+# The Barman Cloud plugin writes base backups + WAL segments here. The
+# credentials secret is NOT committed: create it out-of-band (SOPS/Sealed
+# Secret or `kubectl create secret`) with the Barman-shaped keys:
+#
+#   kubectl -n postgres create secret generic pg-sample-b2-creds \
+#     --from-literal=ACCESS_KEY_ID=<b2-key-id> \
+#     --from-literal=ACCESS_SECRET_KEY=<b2-app-key>
+#
+# Backblaze B2 S3 endpoint for the bucket used by CEPO. Change the bucket/path
+# if pg-sample should live in a different bucket.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: pg-sample-b2-store
+  namespace: postgres
+spec:
+  configuration:
+    destinationPath: s3://cepo-archive/pg-sample
+    endpointURL: https://s3.us-east-005.backblazeb2.com
+    s3Credentials:
+      accessKeyId:
+        name: pg-sample-b2-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: pg-sample-b2-creds
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+  # Retention lives on the ObjectStore in the plugin architecture.
+  retentionPolicy: "30d"

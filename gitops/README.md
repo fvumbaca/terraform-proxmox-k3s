@@ -69,6 +69,91 @@ kubectl expose deploy nginx --port=80 --type=LoadBalancer
 kubectl get svc nginx -w   # EXTERNAL-IP should land in 10.0.6.80-99
 ```
 
+## CNPG native backups (Barman Cloud plugin)
+
+The GitOps tree installs the prerequisites for native CloudNativePG backups:
+
+| Path | What it does |
+| --- | --- |
+| `infrastructure/controllers/cert-manager/` | cert-manager HelmRelease (the plugin's webhook certificates need it) |
+| `infrastructure/controllers/barman-cloud/` | `plugin-barman-cloud` HelmRelease in `cnpg-system`; `dependsOn` cert-manager + cloudnative-pg |
+| `apps/postgres/object-store.yaml` | `ObjectStore` pointing at Backblaze B2, 30-day retention |
+| `apps/postgres/scheduled-backup.yaml` | daily `ScheduledBackup` using `method: plugin` |
+| `apps/postgres/cluster.yaml` | `spec.plugins` with `isWALArchiver: true` |
+
+The plugin chart requires **CloudNativePG ≥ 1.30** and **cert-manager**. Both are
+declared under `infrastructure/controllers`, so Flux installs them before the
+plugin (the HelmRelease uses `dependsOn`).
+
+### B2 credentials (never committed)
+
+The `ObjectStore` references a secret with Barman-shaped keys. Create it
+out-of-band, or encrypt it with SOPS/Sealed Secrets:
+
+```bash
+kubectl -n postgres create secret generic pg-sample-b2-creds \
+  --from-literal=ACCESS_KEY_ID=<b2-key-id> \
+  --from-literal=ACCESS_SECRET_KEY=<b2-app-key>
+```
+
+For the live `cepo` cluster, the same pattern uses `cepo-b2-creds` in the
+`cepo` namespace (derived from the existing `cepo-secrets` B2 keys) and an
+`ObjectStore` named `cepo-b2-store` at `s3://cepo-archive/cepo-postgres`.
+
+### Verify
+
+```bash
+kubectl -n cnpg-system get deploy plugin-barman-cloud
+kubectl -n postgres get objectstore,scheduledbackup
+kubectl -n postgres get cluster pg-sample -o jsonpath='{.spec.plugins}'
+kubectl -n postgres get cluster pg-sample -o jsonpath='{.status.conditions[?(@.type=="ContinuousArchiving")]}'
+```
+
+Trigger an on-demand backup:
+
+```bash
+kubectl -n postgres apply -f - <<'EOF'
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: pg-sample-manual-1
+spec:
+  cluster:
+    name: pg-sample
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+EOF
+kubectl -n postgres get backup
+```
+
+### Restore / PITR
+
+Recovery uses the plugin's `externalClusters` stanza. Create a new Cluster with
+`bootstrap.recovery.source` pointing at the ObjectStore and the original
+`serverName`:
+
+```yaml
+spec:
+  bootstrap:
+    recovery:
+      source: pg-sample-source
+  externalClusters:
+    - name: pg-sample-source
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: pg-sample-b2-store
+          serverName: pg-sample
+```
+
+The `serverName` is the original cluster name; it is what lets Barman locate the
+backup set. Add `spec.plugins` to the restored cluster if it should keep
+archiving WALs.
+
+> The existing `pg_dump` cronjob in the CEPO repo remains a portable secondary
+> backup; native CNPG backups add continuous WAL archiving (minutes-level RPO).
+
 ## Notes
 
 - **Why not Terraform helm?** Flux is the GitOps source of truth for cluster
