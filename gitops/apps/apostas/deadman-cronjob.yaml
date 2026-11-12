@@ -29,7 +29,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: deadman
-              image: 10.0.6.9:30500/apostas/app:49fe39e
+              image: 10.0.6.9:30500/apostas/app:1c5c7c8
               imagePullPolicy: Always
               command: ["/bin/sh", "-c"]
               args:
