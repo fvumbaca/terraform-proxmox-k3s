@@ -154,6 +154,32 @@ archiving WALs.
 > The existing `pg_dump` cronjob in the CEPO repo remains a portable secondary
 > backup; native CNPG backups add continuous WAL archiving (minutes-level RPO).
 
+## Monitoring
+
+The live single-node cluster runs `kube-prometheus-stack` in the `monitoring`
+namespace (Prometheus Operator, Prometheus, Alertmanager, kube-state-metrics).
+The application bundles commit their monitors and rules:
+
+- `gitops/apps/cepo/monitoring.yaml` — engine ServiceMonitor, CNPG PodMonitor,
+  and alerts for stale leader loop, no leader, LLM errors, backup stale/failed,
+  and stalled WAL archiving.
+- `gitops/apps/apostas/monitoring.yaml` — the same pattern for Apostas.
+
+Install the stack before applying these bundles:
+
+```sh
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace \
+  --set grafana.enabled=false --set nodeExporter.enabled=false
+```
+
+The ServiceMonitor selects the engine Service by its `app=<engine>` label and
+the `http` port; the PodMonitor selects CNPG pods by `cnpg.io/cluster=<name>`.
+Backup alerts use the Barman plugin metrics
+(`barman_cloud_cloudnative_pg_io_last_*_backup_timestamp`); WAL stalls use
+`cnpg_collector_pg_wal_archive_status{value="ready"}`.
+
 ## Notes
 
 - **Why not Terraform helm?** Flux is the GitOps source of truth for cluster
