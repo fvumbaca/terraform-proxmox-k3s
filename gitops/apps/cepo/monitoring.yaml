@@ -116,7 +116,9 @@ spec:
             summary: "CEPO pod restarted"
             description: "A CEPO workload restarted in the last hour."
         - alert: CepoCronJobFailed
-          expr: kube_job_failed{namespace="cepo"} > 0
+          # Only alert on a failure in the last hour; old failed jobs stay in
+          # kube-state-metrics forever and would fire indefinitely.
+          expr: increase(kube_job_failed{namespace="cepo"}[1h]) > 0
           labels:
             severity: critical
           annotations:
