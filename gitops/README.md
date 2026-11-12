@@ -171,7 +171,9 @@ Install the stack before applying these bundles:
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
   -n monitoring --create-namespace \
-  --set grafana.enabled=false --set nodeExporter.enabled=false
+  --set grafana.enabled=false --set nodeExporter.enabled=false \
+  --set kubeControllerManager.enabled=false --set kubeScheduler.enabled=false \
+  --set kubeProxy.enabled=false --set kubeEtcd.enabled=false
 ```
 
 The ServiceMonitor selects the engine Service by its `app=<engine>` label and
