@@ -1,0 +1,18 @@
+# Apostas weather-futures stack. Secrets are NOT committed: create them
+# out-of-band (see apostas/scripts/deploy.sh) before applying this bundle.
+#
+# The CNPG cluster uses the Barman Cloud plugin with the apostas-b2-store
+# ObjectStore; the daily ScheduledBackup writes base backups + WAL to
+# s3://apostas-archive/cnpg.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./cnpg-object-store.yaml
+  - ./cnpg-cluster.yaml
+  - ./cnpg-scheduled-backup.yaml
+  - ./app.yaml
+  - ./backup-cronjob.yaml
+  - ./deadman-cronjob.yaml
+  - ./pdb.yaml
+  - ./netpols.yaml
+  - ./monitoring.yaml

@@ -76,4 +76,52 @@ credentials secret, verification commands, and point-in-time restore recipe.
 
 For the live `cepo` cluster the same pattern uses the `cepo-b2-creds` secret and
 an `ObjectStore` named `cepo-b2-store` at `s3://cepo-archive/cepo-postgres`.
+The backup objects are committed under `gitops/apps/cepo/`.
+
+### Apostas
+
+`apostas-postgres` uses the same plugin architecture: `ObjectStore
+apostas-b2-store` at `s3://apostas-archive/cnpg` (14-day retention) and a daily
+`ScheduledBackup` at 03:00 UTC. The manifests live under `gitops/apps/apostas/`.
+
+The nightly `apostas-pg-backup` CronJob is a secondary logical dump on a
+`local-path` PVC; it is **not** off-node, so the native CNPG backup is the
+primary recovery path. Verify it monthly by restoring into a scratch cluster:
+
+```sh
+kubectl -n apostas create -f - <<'EOF'
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: apostas-postgres-restore-test
+  namespace: apostas
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  bootstrap:
+    recovery:
+      source: apostas-postgres
+      recoveryTarget:
+        targetTime: "2026-11-12T22:00:00Z"
+  externalClusters:
+    - name: apostas-postgres
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: apostas-b2-store
+          serverName: apostas-postgres
+EOF
+```
+
+Wait for the cluster to become healthy, verify row counts in `weather_signals`,
+`orders`, and `positions`, then delete the scratch cluster.
+
+The `apostas-deadman` CronJob alerts on a stale heartbeat, a missing/stale
+`pg_dump`, or stale data sources. Set `ALERT_WEBHOOK` in
+`apostas-backup-secrets` and `HEALTHCHECK_PING_URL` in
+`apostas-engine-secrets`; the engine logs a warning at startup when either is
+unset.
 

@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: apostas-web-pdb
+  namespace: apostas
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: apostas-web

@@ -1,0 +1,16 @@
+# Daily base backup for apostas-postgres via the Barman Cloud plugin. The
+# schedule is a six-field cron expression (seconds minutes hours day month
+# weekday). WAL archiving alone cannot be restored without a base backup.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: apostas-postgres-backup
+  namespace: apostas
+spec:
+  cluster:
+    name: apostas-postgres
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

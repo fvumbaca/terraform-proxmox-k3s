@@ -1,0 +1,281 @@
+# Apostas weather-only stack. Secrets are created out-of-band (never committed)
+# and scoped per workload:
+#   apostas-engine-secrets: DB URL, Kalshi keys, B2 keys, Open-Meteo key
+#   apostas-web-secrets:    DB URL, Kalshi keys, dashboard auth, import token
+#   apostas-backup-secrets: DB URL
+#   apostas-b2:             CNPG backup credentials
+# scripts/deploy.sh creates/merges these secrets.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apostas-config
+  namespace: apostas
+data:
+  APOSTAS_MEMCACHED: "memcached:11211"
+  APOSTAS_LOOP_SECS: "300"
+  APOSTAS_REFRESH_SECS: "900"
+  APOSTAS_DRY_RUN: "1"
+  APOSTAS_BANKROLL: "4555.10"
+  # Manual approval so going live requires a second deliberate action.
+  APOSTAS_APPROVAL_MODE: "manual"
+  APOSTAS_DAY_TZ: "UTC"
+  ENGINE_HEALTH_MAX_AGE_SECS: "600"
+  KALSHI_BASE_URL: "https://demo-api.kalshi.co/trade-api/v2"
+  RUST_LOG: "info,sqlx=warn"
+
+  # Portfolio caps (overridable from the dashboard's app_settings)
+  RISK_MIN_PRICE: "0.05"
+  RISK_MAX_PRICE: "0.95"
+  RISK_MAX_EXPOSURE_PCT: "0.20"
+  RISK_MAX_TRADES_DAY: "8"
+  RISK_COOLDOWN_MIN: "120"
+  RISK_MAX_DAILY_LOSS: "100"
+  RISK_MAX_DAILY_LOSS_PCT: "0.03"
+  RISK_DRAWDOWN_STOP_PCT: "0.80"
+  RISK_MIN_NOTIONAL: "1"
+
+  # Weather market model and caps
+  WEATHER_ENABLED: "true"
+  WEATHER_BIAS_F: "0"
+  WEATHER_SIGMA_F: "2"
+  WEATHER_MIN_EDGE: "0.20"
+  WEATHER_BETWEEN_MIN_EDGE: "0.30"
+  WEATHER_MIN_LIQUIDITY: "20"
+  WEATHER_MIN_VOLUME: "20"
+  WEATHER_MAX_SPREAD: "0.10"
+  WEATHER_MAX_NOTIONAL: "10"
+  WEATHER_MAX_COUNT_PER_TICKER: "150"
+  WEATHER_MAX_POSITIONS: "20"
+  WEATHER_MAX_STATION_EXPOSURE: "100"
+  WEATHER_MAX_REGION_EXPOSURE: "150"
+  WEATHER_KELLY_FRACTION: "0.10"
+  WEATHER_SLIPPAGE: "0.04"
+  WEATHER_CALIBRATION_DAYS: "30"
+  WEATHER_CALIBRATION_MIN_SAMPLES: "5"
+  WEATHER_FORECAST_CACHE_MINUTES: "360"
+
+  # Optional B2 archive (credentials live in apostas-secrets)
+  ARCHIVE_ENABLED: "true"
+  B2_ENDPOINT: "https://s3.us-east-005.backblazeb2.com"
+  B2_BUCKET: "apostas-archive"
+  B2_PREFIX: "apostas"
+  B2_REGION: "us-east-005"
+
+  APOSTAS_RETENTION_DAYS: "30"
+  ALERT_MAX_AGE_SECS: "1800"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcached
+  namespace: apostas
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: memcached
+  template:
+    metadata:
+      labels:
+        app: memcached
+    spec:
+      containers:
+        - name: memcached
+          image: memcached:1.6
+          args: ["-m", "128"]
+          ports:
+            - containerPort: 11211
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcached
+  namespace: apostas
+spec:
+  selector:
+    app: memcached
+  ports:
+    - port: 11211
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apostas-engine
+  namespace: apostas
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: apostas-engine
+  template:
+    metadata:
+      labels:
+        app: apostas-engine
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: db-wait
+          image: 10.0.6.9:30500/apostas/app:0.1.0
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "for i in $(seq 1 60); do pg_isready -h apostas-postgres-rw -p 5432 && exit 0; sleep 2; done; echo 'postgres unreachable' >&2; exit 1"]
+      containers:
+        - name: engine
+          image: 10.0.6.9:30500/apostas/app:0.1.0
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/apostas-engine"]
+          envFrom:
+            - configMapRef:
+                name: apostas-config
+            - secretRef:
+                name: apostas-engine-secrets
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apostas-engine
+  namespace: apostas
+spec:
+  selector:
+    app: apostas-engine
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apostas-web
+  namespace: apostas
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apostas-web
+  template:
+    metadata:
+      labels:
+        app: apostas-web
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: apostas-web
+                topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: db-wait
+          image: 10.0.6.9:30500/apostas/app:0.1.0
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c", "for i in $(seq 1 60); do pg_isready -h apostas-postgres-rw -p 5432 && exit 0; sleep 2; done; echo 'postgres unreachable' >&2; exit 1"]
+      containers:
+        - name: web
+          image: 10.0.6.9:30500/apostas/app:0.1.0
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/apostas-web"]
+          envFrom:
+            - configMapRef:
+                name: apostas-config
+            - secretRef:
+                name: apostas-web-secrets
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apostas-web
+  namespace: apostas
+spec:
+  type: LoadBalancer
+  selector:
+    app: apostas-web
+  ports:
+    - port: 80
+      targetPort: 8080

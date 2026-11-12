@@ -1,0 +1,91 @@
+# Prometheus Operator wiring for Apostas. Apply only when the Prometheus
+# Operator CRDs are installed (kube-prometheus-stack).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: apostas-engine
+  namespace: apostas
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: apostas-engine
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: apostas-postgres
+  namespace: apostas
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: apostas-postgres
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: apostas-alerts
+  namespace: apostas
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: apostas.rules
+      rules:
+        - alert: ApostasEngineLoopStale
+          expr: (time() - apostas_last_loop_unix) > 2700 and apostas_engine_is_leader == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Apostas engine decision loop is stale"
+            description: "No completed leader loop for >45 minutes."
+        - alert: ApostasNoLeader
+          expr: max(apostas_engine_is_leader) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Apostas has no engine leader"
+            description: "Both replicas are standby or the lease table is unreachable."
+        - alert: ApostasEngineErrors
+          expr: increase(apostas_errors_total[15m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Apostas engine errors"
+            description: "The engine is logging loop errors."
+        - alert: ApostasBackupStale
+          expr: time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="apostas"} > 86400
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Apostas CNPG base backup is stale"
+            description: "No successful base backup for >24h."
+        - alert: ApostasBackupFailed
+          expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{namespace="apostas"} > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="apostas"}
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Apostas CNPG backup failed"
+            description: "The most recent backup attempt failed."
+        - alert: ApostasWalArchivingStale
+          expr: cnpg_collector_pg_wal_archive_status{namespace="apostas",value="ready"} > 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Apostas WAL archiving is stale"
+            description: "WAL segments have been waiting to be archived for >15 minutes."

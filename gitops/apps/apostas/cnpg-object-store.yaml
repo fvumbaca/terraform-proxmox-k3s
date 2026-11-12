@@ -1,0 +1,25 @@
+# Native CloudNativePG backup target for apostas-postgres.
+#
+# The Barman Cloud plugin writes base backups + WAL segments here. This replaces
+# the deprecated in-tree `spec.backup.barmanObjectStore` integration (removed in
+# CNPG 1.31/1.32). Credentials are the same B2 keys used by the JSONL archiver.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: apostas-b2-store
+  namespace: apostas
+spec:
+  configuration:
+    destinationPath: s3://apostas-archive/cnpg
+    endpointURL: https://s3.us-east-005.backblazeb2.com
+    s3Credentials:
+      accessKeyId:
+        name: apostas-b2
+        key: B2_KEY_ID
+      secretAccessKey:
+        name: apostas-b2
+        key: B2_APP_KEY
+    wal:
+      compression: gzip
+  # Retention lives on the ObjectStore in the plugin architecture.
+  retentionPolicy: "14d"

@@ -1,0 +1,59 @@
+# Native CloudNativePG backups via the Barman Cloud plugin.
+#
+# Why this exists: the `pg_dump` cronjob gives a 24h RPO and only proves the
+# dump parses. Native CNPG backups add continuous WAL archiving, so recovery
+# can target any point in time (minutes-level RPO), and the base backups are
+# taken by the operator with the cluster's own consistency guarantees.
+#
+# Requirements (install once, out of band):
+#   1. CloudNativePG operator >= 1.30 (plugin 0.16 requires it).
+#   2. cert-manager installed and ready (`cmctl check api`).
+#   3. The Barman Cloud plugin in the SAME namespace as the operator:
+#        helm repo add cnpg https://cloudnative-pg.github.io/charts --force-update
+#        helm upgrade --install plugin-barman-cloud \
+#          --namespace cnpg-system cnpg/plugin-barman-cloud
+#      (or `kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/plugin-barman-cloud/refs/heads/main/manifest.yaml`)
+#   4. A secret with Barman-shaped keys (the app's cepo-secrets uses
+#      B2_KEY_ID/B2_APP_KEY, so create a dedicated one):
+#        kubectl -n cepo create secret generic cepo-b2-creds \
+#          --from-literal=ACCESS_KEY_ID=<b2-key-id> \
+#          --from-literal=ACCESS_SECRET_KEY=<b2-app-key>
+#
+# The Cluster manifest (`cnpg-cluster.yaml`) references this ObjectStore via
+# `spec.plugins` with `isWALArchiver: true`.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: cepo-b2-store
+  namespace: cepo
+spec:
+  configuration:
+    destinationPath: s3://cepo-archive/cepo-postgres
+    endpointURL: https://s3.us-east-005.backblazeb2.com
+    s3Credentials:
+      accessKeyId:
+        name: cepo-b2-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: cepo-b2-creds
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+  # Retention is defined on the ObjectStore in the plugin architecture.
+  retentionPolicy: "30d"
+---
+# Daily base backup at 03:00 UTC (the pg_dump cronjob stays as a secondary,
+# portable logical backup). The schedule is a six-field cron expression.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: cepo-postgres-backup
+  namespace: cepo
+spec:
+  cluster:
+    name: cepo-postgres
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

@@ -1,0 +1,108 @@
+# Out-of-band dead-man check. The engine pings HEALTHCHECK_PING_URL after each
+# leader loop, but that only catches a dead engine. This CronJob catches the
+# slower failures the removed watchdog used to cover: a stale heartbeat, a
+# missing/stale pg_dump, and stale data sources. Alerts go to ALERT_WEBHOOK.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: apostas-deadman
+  namespace: apostas
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: deadman
+              image: 10.0.6.9:30500/apostas/app:0.1.0
+              imagePullPolicy: Always
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -u
+                  alert() {
+                    if [ -n "${ALERT_WEBHOOK:-}" ]; then
+                      curl -fsS -X POST --data "$1" "$ALERT_WEBHOOK" >/dev/null || true
+                    fi
+                  }
+                  fail=0
+                  max="${ALERT_MAX_AGE_SECS:-1800}"
+                  hb=$(psql "$APOSTAS_DATABASE_URL" -tAc \
+                    "select coalesce(extract(epoch from now()-last_loop_at)::bigint, -1) from engine_heartbeat where id=1" \
+                    2>/dev/null | tr -d '[:space:]')
+                  hb="${hb:--1}"
+                  if [ "$hb" -lt 0 ] || [ "$hb" -gt "$max" ]; then
+                    echo "FAIL heartbeat stale (${hb}s > ${max}s)"
+                    alert "apostas dead-man: engine heartbeat stale (${hb}s > ${max}s)"
+                    fail=1
+                  else
+                    echo "OK heartbeat ${hb}s"
+                  fi
+                  latest=$(ls -t /backups/*.sql 2>/dev/null | head -1 || true)
+                  if [ -z "$latest" ]; then
+                    echo "FAIL no pg_dump found in /backups"
+                    alert "apostas dead-man: no pg_dump found in /backups"
+                    fail=1
+                  else
+                    age=$(( $(date +%s) - $(stat -c %Y "$latest") ))
+                    if [ "$age" -gt 93600 ]; then
+                      echo "FAIL latest pg_dump ${age}s old (>26h)"
+                      alert "apostas dead-man: latest pg_dump is ${age}s old (>26h)"
+                      fail=1
+                    else
+                      echo "OK latest pg_dump ${age}s old"
+                    fi
+                  fi
+                  stale=$(psql "$APOSTAS_DATABASE_URL" -tAc \
+                    "select coalesce(string_agg(name, ','), '') from data_sources \
+                     where last_ok_at is null or last_ok_at < now() - interval '6 hours'" \
+                    2>/dev/null | tr -d '[:space:]')
+                  if [ -n "$stale" ]; then
+                    echo "FAIL stale data sources: $stale"
+                    alert "apostas dead-man: stale data sources: $stale"
+                    fail=1
+                  else
+                    echo "OK data sources fresh"
+                  fi
+                  exit "$fail"
+              envFrom:
+                - configMapRef:
+                    name: apostas-config
+                - secretRef:
+                    name: apostas-backup-secrets
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: apostas-backups
+                readOnly: true

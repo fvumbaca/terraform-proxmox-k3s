@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apostas
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: apostas-postgres
+  namespace: apostas
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  bootstrap:
+    initdb:
+      database: apostas
+      owner: apostas
+  # Off-node base backups + WAL archiving through the Barman Cloud plugin.
+  # The ObjectStore (apostas-b2-store) owns the destination and retention; the
+  # in-tree spec.backup integration is deprecated and removed in CNPG 1.31+.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: apostas-b2-store
+  monitoring:
+    disableDefaultQueries: false

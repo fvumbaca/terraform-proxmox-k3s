@@ -9,6 +9,8 @@ resources:
   - ./postgres/cluster.yaml
   - ./postgres/object-store.yaml
   - ./postgres/scheduled-backup.yaml
+  - ./cepo
+  - ./apostas
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:

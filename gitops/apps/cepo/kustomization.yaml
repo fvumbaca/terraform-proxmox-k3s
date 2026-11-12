@@ -1,0 +1,11 @@
+# CEPO native CNPG backup objects and monitoring rules. The app
+# Deployment/Service manifests live in the cepo repo (deploy/app.yaml); this
+# bundle pins the backup target and alert rules that the live cluster uses.
+#
+# The cepo-b2-creds secret is created out-of-band with ACCESS_KEY_ID /
+# ACCESS_SECRET_KEY (see gitops/README.md).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./cnpg-backup-plugin.yaml
+  - ./monitoring.yaml
