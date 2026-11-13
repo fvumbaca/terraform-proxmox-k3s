@@ -13,9 +13,9 @@
 #        helm upgrade --install plugin-barman-cloud \
 #          --namespace cnpg-system cnpg/plugin-barman-cloud
 #      (or `kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/plugin-barman-cloud/refs/heads/main/manifest.yaml`)
-#   4. A secret with Barman-shaped keys (the app's cepo-secrets uses
+#   4. A secret with Barman-shaped keys (the app's easy-secrets uses
 #      B2_KEY_ID/B2_APP_KEY, so create a dedicated one):
-#        kubectl -n cepo create secret generic cepo-b2-creds \
+#        kubectl -n easy create secret generic easy-b2-creds \
 #          --from-literal=ACCESS_KEY_ID=<b2-key-id> \
 #          --from-literal=ACCESS_SECRET_KEY=<b2-app-key>
 #
@@ -24,18 +24,18 @@
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore
 metadata:
-  name: cepo-b2-store
-  namespace: cepo
+  name: easy-b2-store
+  namespace: easy
 spec:
   configuration:
-    destinationPath: s3://cepo-archive/cepo-postgres
+    destinationPath: s3://easy-archive/easy-postgres
     endpointURL: https://s3.us-east-005.backblazeb2.com
     s3Credentials:
       accessKeyId:
-        name: cepo-b2-creds
+        name: easy-b2-creds
         key: ACCESS_KEY_ID
       secretAccessKey:
-        name: cepo-b2-creds
+        name: easy-b2-creds
         key: ACCESS_SECRET_KEY
     wal:
       compression: gzip
@@ -47,11 +47,11 @@ spec:
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
-  name: cepo-postgres-backup
-  namespace: cepo
+  name: easy-postgres-backup
+  namespace: easy
 spec:
   cluster:
-    name: cepo-postgres
+    name: easy-postgres
   schedule: "0 0 3 * * *"
   backupOwnerReference: self
   method: plugin

@@ -9,7 +9,7 @@ resources:
   - ./postgres/cluster.yaml
   - ./postgres/object-store.yaml
   - ./postgres/scheduled-backup.yaml
-  - ./cepo
+  - ./easy
   - ./apostas
 generatorOptions:
   disableNameSuffixHash: true

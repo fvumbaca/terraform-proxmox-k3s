@@ -1,4 +1,4 @@
-# Minimal Prometheus Operator wiring for CEPO. Apply only if the cluster has
+# Minimal Prometheus Operator wiring for EASY. Apply only if the cluster has
 # the Prometheus Operator CRDs (ServiceMonitor / PrometheusRule).
 #
 # The engine already exposes /metrics on port 8080. The dead-man alert below
@@ -7,14 +7,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: cepo-engine
-  namespace: cepo
+  name: easy-engine
+  namespace: easy
   labels:
     release: prometheus
 spec:
   selector:
     matchLabels:
-      app: cepo-engine
+      app: easy-engine
   endpoints:
     - port: http
       path: /metrics
@@ -23,14 +23,14 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: cepo-postgres
-  namespace: cepo
+  name: easy-postgres
+  namespace: easy
   labels:
     release: prometheus
 spec:
   selector:
     matchLabels:
-      cnpg.io/cluster: cepo-postgres
+      cnpg.io/cluster: easy-postgres
   podMetricsEndpoints:
     - port: metrics
       interval: 30s
@@ -38,89 +38,89 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: cepo-alerts
-  namespace: cepo
+  name: easy-alerts
+  namespace: easy
   labels:
     release: prometheus
 spec:
   groups:
-    - name: cepo.rules
+    - name: easy.rules
       rules:
-        - alert: CepoEngineLoopStale
+        - alert: EasyEngineLoopStale
           # Only the leader runs the decision loop; the standby's counter is 0.
-          expr: (time() - cepo_engine_last_loop_timestamp_seconds) > 2700 and cepo_engine_is_leader == 1
+          expr: (time() - easy_engine_last_loop_timestamp_seconds) > 2700 and easy_engine_is_leader == 1
           for: 5m
           labels:
             severity: critical
           annotations:
-            summary: "CEPO engine decision loop is stale"
+            summary: "EASY engine decision loop is stale"
             description: "No completed leader loop for >45 minutes; the desk may be dead."
-        - alert: CepoNoLeader
-          expr: max(cepo_engine_is_leader) == 0
+        - alert: EasyNoLeader
+          expr: max(easy_engine_is_leader) == 0
           for: 5m
           labels:
             severity: critical
           annotations:
-            summary: "CEPO has no engine leader"
+            summary: "EASY has no engine leader"
             description: "Both replicas are standby or the lease table is unreachable."
-        - alert: CepoLlmErrors
-          expr: increase(cepo_engine_llm_errors_total[15m]) > 5
+        - alert: EasyLlmErrors
+          expr: increase(easy_engine_llm_errors_total[15m]) > 5
           labels:
             severity: warning
           annotations:
-            summary: "CEPO LLM calls are failing"
+            summary: "EASY LLM calls are failing"
             description: "The LLM gateway is erroring; decisions are not being generated."
-        - alert: CepoBackupStale
-          expr: time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="cepo"} > 86400
+        - alert: EasyBackupStale
+          expr: time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="easy"} > 86400
           for: 10m
           labels:
             severity: critical
           annotations:
-            summary: "CEPO CNPG base backup is stale"
+            summary: "EASY CNPG base backup is stale"
             description: "No successful base backup for >24h."
-        - alert: CepoBackupFailed
-          expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{namespace="cepo"} > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="cepo"}
+        - alert: EasyBackupFailed
+          expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{namespace="easy"} > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="easy"}
           for: 10m
           labels:
             severity: critical
           annotations:
-            summary: "CEPO CNPG backup failed"
+            summary: "EASY CNPG backup failed"
             description: "The most recent backup attempt failed."
-        - alert: CepoWalArchivingStale
-          expr: cnpg_collector_pg_wal_archive_status{namespace="cepo",value="ready"} > 0
+        - alert: EasyWalArchivingStale
+          expr: cnpg_collector_pg_wal_archive_status{namespace="easy",value="ready"} > 0
           for: 15m
           labels:
             severity: critical
           annotations:
-            summary: "CEPO WAL archiving is stale"
+            summary: "EASY WAL archiving is stale"
             description: "WAL segments have been waiting to be archived for >15 minutes."
-        - alert: CepoEngineOrderErrors
-          expr: increase(cepo_engine_order_errors_total[15m]) > 0
+        - alert: EasyEngineOrderErrors
+          expr: increase(easy_engine_order_errors_total[15m]) > 0
           labels:
             severity: warning
           annotations:
-            summary: "CEPO order submission errors"
+            summary: "EASY order submission errors"
             description: "Alpaca order submissions are failing; check the engine log."
-        - alert: CepoEngineDbErrors
-          expr: increase(cepo_engine_db_errors_total[15m]) > 0
+        - alert: EasyEngineDbErrors
+          expr: increase(easy_engine_db_errors_total[15m]) > 0
           labels:
             severity: warning
           annotations:
-            summary: "CEPO database errors"
+            summary: "EASY database errors"
             description: "The engine is logging database failures."
-        - alert: CepoPodRestarts
-          expr: increase(kube_pod_container_status_restarts_total{namespace="cepo"}[1h]) > 0
+        - alert: EasyPodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="easy"}[1h]) > 0
           labels:
             severity: warning
           annotations:
-            summary: "CEPO pod restarted"
-            description: "A CEPO workload restarted in the last hour."
-        - alert: CepoCronJobFailed
+            summary: "EASY pod restarted"
+            description: "A EASY workload restarted in the last hour."
+        - alert: EasyCronJobFailed
           # Only alert on a failure in the last hour; old failed jobs stay in
           # kube-state-metrics forever and would fire indefinitely.
-          expr: increase(kube_job_failed{namespace="cepo"}[1h]) > 0
+          expr: increase(kube_job_failed{namespace="easy"}[1h]) > 0
           labels:
             severity: critical
           annotations:
-            summary: "CEPO cron job failed"
+            summary: "EASY cron job failed"
             description: "Backup or restore drill failed — check the job history."
